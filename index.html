@@ -125,7 +125,7 @@ footer{margin-top:48px;padding-top:18px;padding-bottom:44px;border-top:var(--b) 
         <div><label>体重 KG</label><input name="weight" type="number" step="0.1" min="25" max="200" required></div>
         <div class="span2"><label>活动量</label><select name="activity">
           <option value="1">基本坐着/躺着</option><option value="2">每天会走走路</option><option value="3">每周运动3次以上</option></select></div>
-        <div><label>每天预算 円</label><input name="budget" type="number" min="300" max="10000" step="50" required></div>
+        <div><label>每天预算 元</label><input name="budget" type="number" min="10" max="300" step="1" required></div>
         <div><label>做饭精力</label><select name="effort">
           <option value="0">只想开袋即食</option><option value="1">微波炉+烧水壶</option><option value="2">能用一个锅煮</option></select></div>
       </div>
@@ -156,107 +156,280 @@ footer{margin-top:48px;padding-top:18px;padding-bottom:44px;border-top:var(--b) 
 
 </main>
 <footer>
-  数值和价格都是大致估算，仅供参考。有严重过敏请看配料表。
+  营养值参考中国食物成分表和 USDA 的常见数值，价格是大致估算，仅供参考。有严重过敏请看配料表。
   <button class="mini" id="resetAll" style="margin-left:6px">清空数据</button>
 </footer>
 <div id="toast"></div>
 
 <script>
-/* ========== 食物库（每份的营养与估价；价格按日本超市/便利店大致价格，单位：日元） ========== */
-const FOODS=[
-// 蛋白质
-{id:'egg',name:'鸡蛋',cat:'protein',amt:2,unit:'个',g:100,kcal:143,p:12.2,c:0.4,f:10.2,price:60,effort:1,al:['egg'],dl:['鸡蛋'],nu:['B12','维A'],m:'bld'},
-{id:'cvegg',name:'溏心蛋',cat:'protein',amt:1,unit:'个',g:55,kcal:75,p:6.5,c:1,f:5,price:100,effort:0,cv:1,al:['egg'],dl:['鸡蛋'],nu:['B12'],m:'blds'},
-{id:'saladchicken',name:'即食鸡胸',cat:'protein',amt:1,unit:'包',g:110,kcal:120,p:26,c:1,f:1.5,price:250,effort:0,cv:1,al:[],dl:['鸡肉'],nu:[],m:'bld'},
-{id:'chickthigh',name:'鸡腿肉',cat:'protein',amt:150,unit:'g',g:150,kcal:285,p:25,c:0,f:21,price:180,effort:2,al:[],dl:['鸡肉'],nu:['锌'],m:'ld'},
-{id:'porkkoma',name:'猪肉碎片',cat:'protein',amt:100,unit:'g',g:100,kcal:220,p:18,c:0.2,f:16,price:150,effort:2,al:[],dl:['猪肉'],nu:['锌'],m:'ld'},
-{id:'gyudon',name:'冷冻牛肉盖饭料',cat:'protein',amt:1,unit:'袋',g:120,kcal:166,p:7.5,c:7,f:12,price:280,effort:1,al:['wheat','soy'],dl:['牛肉'],nu:['锌'],m:'ld'},
-{id:'natto',name:'纳豆',cat:'protein',amt:1,unit:'盒',g:45,kcal:90,p:7.4,c:5.4,f:4.5,price:35,effort:0,al:['soy'],dl:['纳豆','豆制品'],nu:['铁','纤维'],m:'bld'},
-{id:'tofu',name:'老豆腐',cat:'protein',amt:200,unit:'g',g:200,kcal:146,p:14,c:3,f:9,price:60,effort:0,al:['soy'],dl:['豆制品'],nu:['钙','铁'],m:'ld'},
-{id:'atsuage',name:'厚炸豆腐',cat:'protein',amt:1,unit:'块',g:150,kcal:215,p:16,c:1,f:17,price:90,effort:1,al:['soy'],dl:['豆制品'],nu:['钙','铁'],m:'ld'},
-{id:'edamame',name:'冷冻毛豆',cat:'protein',amt:100,unit:'g',g:100,kcal:125,p:11.7,c:9,f:6,price:80,effort:1,al:['soy'],dl:['豆制品'],nu:['纤维','铁'],m:'lds'},
-{id:'fishsausage',name:'鱼肉肠',cat:'protein',amt:2,unit:'根',g:140,kcal:220,p:15,c:18,f:10,price:100,effort:0,cv:1,al:['fish'],dl:['鱼'],nu:['钙'],m:'blds'},
-{id:'saba',name:'青花鱼罐头',cat:'protein',amt:1,unit:'罐',g:150,kcal:260,p:31,c:0,f:16,price:200,effort:0,al:['fish'],dl:['鱼'],nu:['钙','B12','维D'],m:'ld',maxM:1.5},
-{id:'tuna',name:'金枪鱼罐头',cat:'protein',amt:1,unit:'罐',g:70,kcal:185,p:12.5,c:0,f:15,price:150,effort:0,al:['fish'],dl:['鱼'],nu:['B12'],m:'ld'},
-{id:'salmon',name:'盐烤三文鱼',cat:'protein',amt:1,unit:'块',g:70,kcal:140,p:16,c:0,f:8,price:280,effort:0,cv:1,al:['fish'],dl:['鱼'],nu:['B12','维D'],m:'ld'},
-{id:'kanikama',name:'蟹柳',cat:'protein',amt:1,unit:'包',g:75,kcal:70,p:9,c:7,f:0.4,price:120,effort:0,cv:1,al:['fish','shellfish'],dl:['鱼','虾/海鲜'],nu:[],m:'lds'},
-{id:'shrimp',name:'冷冻虾仁',cat:'protein',amt:100,unit:'g',g:100,kcal:85,p:19,c:0,f:1,price:200,effort:2,al:['shellfish'],dl:['虾/海鲜'],nu:['锌'],m:'ld'},
-// 主食
-{id:'packrice',name:'盒装米饭',cat:'staple',amt:1,unit:'盒',g:200,kcal:300,p:4.4,c:68,f:0.6,price:150,effort:1,al:[],dl:[],nu:[],m:'ld',maxM:2},
-{id:'rice',name:'米饭（自己煮，熟）',cat:'staple',amt:200,unit:'g',g:200,kcal:312,p:5,c:74,f:0.6,price:70,effort:1,al:[],dl:[],nu:[],m:'ld',raw:0.43,maxM:2},
-{id:'onigiri',name:'饭团（梅干/昆布）',cat:'staple',amt:1,unit:'个',g:110,kcal:180,p:3.5,c:39,f:0.8,price:150,effort:0,cv:1,al:['soy','wheat'],dl:[],nu:[],m:'bld',maxM:2},
-{id:'onigirisake',name:'饭团（鲑鱼）',cat:'staple',amt:1,unit:'个',g:110,kcal:185,p:6,c:37,f:1.5,price:170,effort:0,cv:1,al:['fish'],dl:['鱼'],nu:[],m:'bld',maxM:2},
-{id:'bread',name:'吐司',cat:'staple',amt:1,unit:'片',g:60,kcal:158,p:5.4,c:28,f:2.6,price:30,effort:0,al:['wheat'],dl:[],nu:[],m:'bld',maxM:3},
-{id:'oats',name:'燕麦片',cat:'staple',amt:40,unit:'g',g:40,kcal:152,p:5.5,c:28,f:2.3,price:30,effort:1,al:['wheat'],dl:['燕麦'],nu:['纤维','铁'],m:'b'},
-{id:'granola',name:'格兰诺拉',cat:'staple',amt:50,unit:'g',g:50,kcal:220,p:3.7,c:35,f:7.6,price:80,effort:0,al:['wheat'],dl:['燕麦'],nu:['铁','纤维'],m:'b'},
-{id:'udon',name:'冷冻乌冬',cat:'staple',amt:1,unit:'份',g:200,kcal:190,p:5,c:41,f:0.8,price:50,effort:1,al:['wheat'],dl:['乌冬'],nu:[],m:'ld',maxM:2},
-{id:'soba',name:'冷冻荞麦面',cat:'staple',amt:1,unit:'份',g:180,kcal:230,p:9,c:45,f:1.5,price:70,effort:1,al:['buckwheat','wheat'],dl:[],nu:['纤维'],m:'ld',maxM:2},
-{id:'pasta',name:'意面',cat:'staple',amt:100,unit:'g',g:100,kcal:347,p:12,c:73,f:1.5,price:30,effort:2,al:['wheat'],dl:[],nu:[],m:'ld',maxM:1.5},
-{id:'chahan',name:'冷冻炒饭',cat:'staple',amt:225,unit:'g',g:225,kcal:390,p:9,c:62,f:11,price:200,effort:1,al:['egg','wheat','soy'],dl:['猪肉'],nu:[],m:'ld',maxM:2},
-{id:'gyoza',name:'冷冻煎饺',cat:'staple',amt:6,unit:'个',g:138,kcal:270,p:9,c:29,f:13,price:120,effort:2,al:['wheat','soy','sesame'],dl:['猪肉'],nu:[],m:'ld',maxM:2},
-{id:'yakiimo',name:'烤红薯',cat:'staple',amt:1,unit:'个',g:200,kcal:300,p:2.8,c:72,f:0.4,price:200,effort:0,al:[],dl:['红薯'],nu:['纤维','维C'],m:'bld',maxM:1.5},
-{id:'satsumaimo',name:'红薯（生）',cat:'staple',amt:1,unit:'个',g:200,kcal:265,p:2.4,c:63,f:0.4,price:100,effort:1,al:[],dl:['红薯'],nu:['纤维','维C'],m:'bld',maxM:1.5},
-// 蔬菜
-{id:'broccoli',name:'冷冻西兰花',cat:'veg',amt:150,unit:'g',g:150,kcal:50,p:6,c:7,f:0.6,price:100,effort:1,al:[],dl:['西兰花'],nu:['维C','纤维'],m:'ld'},
-{id:'cutveg',name:'切好的沙拉菜',cat:'veg',amt:1,unit:'袋',g:130,kcal:30,p:1.5,c:6,f:0.2,price:100,effort:0,cv:1,al:[],dl:[],nu:['维C'],m:'ld'},
-{id:'spinach',name:'冷冻菠菜',cat:'veg',amt:100,unit:'g',g:100,kcal:25,p:2.5,c:3,f:0.5,price:60,effort:1,al:[],dl:['菠菜'],nu:['铁','维A'],m:'ld'},
-{id:'komatsuna',name:'冷冻小松菜',cat:'veg',amt:100,unit:'g',g:100,kcal:14,p:1.5,c:2.4,f:0.2,price:60,effort:1,al:[],dl:[],nu:['钙','铁','维A','维C'],m:'ld'},
-{id:'moyashi',name:'豆芽',cat:'veg',amt:1,unit:'袋',g:200,kcal:30,p:3.4,c:5,f:0.2,price:40,effort:1,al:[],dl:['豆芽'],nu:['维C','纤维'],m:'ld'},
-{id:'minitomato',name:'小番茄',cat:'veg',amt:10,unit:'个',g:150,kcal:45,p:1.6,c:11,f:0.2,price:200,effort:0,al:[],dl:['番茄'],nu:['维C','维A'],m:'lds'},
-{id:'cucumber',name:'黄瓜',cat:'veg',amt:1,unit:'根',g:100,kcal:14,p:1,c:3,f:0.1,price:60,effort:0,al:[],dl:['黄瓜'],nu:[],m:'ld',maxM:2},
-{id:'carrot',name:'胡萝卜',cat:'veg',amt:1,unit:'根',g:150,kcal:50,p:1,c:13,f:0.2,price:50,effort:0,al:[],dl:['胡萝卜'],nu:['维A','纤维'],m:'ld'},
-{id:'mixveg',name:'冷冻什锦蔬菜',cat:'veg',amt:100,unit:'g',g:100,kcal:70,p:3,c:14,f:0.6,price:60,effort:1,al:[],dl:['胡萝卜'],nu:['维A','纤维'],m:'ld'},
-{id:'kabocha',name:'冷冻南瓜',cat:'veg',amt:150,unit:'g',g:150,kcal:125,p:2.8,c:30,f:0.4,price:120,effort:1,al:[],dl:['南瓜'],nu:['维A','维C','纤维'],m:'ld'},
-// 水果
-{id:'banana',name:'香蕉',cat:'fruit',amt:1,unit:'根',g:120,kcal:100,p:1.3,c:26,f:0.2,price:40,effort:0,cv:1,al:[],dl:['香蕉'],nu:[],m:'bs'},
-{id:'mikan',name:'橘子',cat:'fruit',amt:2,unit:'个',g:150,kcal:70,p:1,c:18,f:0.2,price:80,effort:0,al:[],dl:[],nu:['维C'],m:'bs'},
-{id:'apple',name:'苹果',cat:'fruit',amt:1,unit:'个',g:250,kcal:135,p:0.3,c:37,f:0.5,price:150,effort:0,al:[],dl:[],nu:['纤维'],m:'bs'},
-{id:'kiwi',name:'猕猴桃',cat:'fruit',amt:1,unit:'个',g:100,kcal:53,p:1,c:13.5,f:0.2,price:80,effort:0,al:[],dl:[],nu:['维C','纤维'],m:'bs'},
-{id:'kuri',name:'剥壳甘栗',cat:'fruit',amt:1,unit:'袋',g:50,kcal:110,p:2.5,c:24,f:0.5,price:150,effort:0,cv:1,al:['treenut'],dl:['坚果'],nu:['纤维'],m:'bs'},
-{id:'prune',name:'西梅干',cat:'fruit',amt:5,unit:'个',g:50,kcal:106,p:1.2,c:31,f:0.1,price:80,effort:0,al:[],dl:[],nu:['纤维'],m:'bs'},
-{id:'vegjuice',name:'蔬菜汁',cat:'fruit',amt:200,unit:'ml',g:200,kcal:70,p:1,c:16,f:0,price:90,effort:0,cv:1,al:[],dl:[],nu:['维A','维C'],m:'bs'},
-// 高能量零食
-{id:'nuts',name:'混合坚果',cat:'fat',amt:30,unit:'g',g:30,kcal:185,p:5.6,c:5.5,f:16,price:60,effort:0,al:['treenut'],dl:['坚果'],nu:[],m:'s'},
-{id:'almond',name:'杏仁',cat:'fat',amt:25,unit:'g',g:25,kcal:150,p:5,c:5,f:13,price:50,effort:0,cv:1,al:['treenut'],dl:['坚果'],nu:[],m:'s'},
-{id:'peanut',name:'花生',cat:'fat',amt:30,unit:'g',g:30,kcal:180,p:7.7,c:5,f:16,price:30,effort:0,al:['peanut'],dl:['花生'],nu:[],m:'s'},
-{id:'pb',name:'花生酱',cat:'fat',amt:2,unit:'勺',g:32,kcal:190,p:8,c:6,f:16,price:40,effort:0,al:['peanut'],dl:['花生'],nu:[],m:'s'},
-{id:'cheese',name:'奶酪',cat:'fat',amt:2,unit:'块',g:36,kcal:120,p:8,c:0.5,f:10,price:80,effort:0,al:['milk'],dl:['奶酪'],nu:['钙','B12'],m:'s'},
-{id:'proteinbar',name:'蛋白棒',cat:'fat',amt:1,unit:'根',g:40,kcal:185,p:15,c:16,f:8,price:150,effort:0,cv:1,al:['milk','soy'],dl:['蛋白粉'],nu:[],m:'s'},
-{id:'caloriemate',name:'卡路里伴侣',cat:'fat',amt:2,unit:'根',g:40,kcal:200,p:4.3,c:21,f:11,price:120,effort:0,cv:1,al:['wheat','egg','milk','soy'],dl:[],nu:['钙','铁','维A','B12'],m:'bs'},
-// 奶 / 豆 / 冲饮
-{id:'milk',name:'牛奶',cat:'drink',amt:200,unit:'ml',g:200,kcal:134,p:6.6,c:9.6,f:7.6,price:50,effort:0,al:['milk'],dl:['牛奶'],nu:['钙','B12'],m:'bs'},
-{id:'savas',name:'蛋白牛奶',cat:'drink',amt:1,unit:'瓶',g:200,kcal:102,p:15,c:10.6,f:0,price:160,effort:0,cv:1,al:['milk'],dl:['蛋白粉'],nu:['钙'],m:'bs'},
-{id:'oikos',name:'希腊酸奶',cat:'drink',amt:1,unit:'杯',g:113,kcal:92,p:10,c:11,f:0,price:160,effort:0,cv:1,al:['milk'],dl:['酸奶'],nu:['钙'],m:'bs'},
-{id:'yogurt',name:'原味酸奶',cat:'drink',amt:150,unit:'g',g:150,kcal:93,p:5.4,c:7,f:4.5,price:75,effort:0,al:['milk'],dl:['酸奶'],nu:['钙','B12'],m:'bs'},
-{id:'soymilk',name:'豆浆',cat:'drink',amt:200,unit:'ml',g:200,kcal:116,p:7.2,c:9,f:7.3,price:55,effort:0,al:['soy'],dl:['豆制品'],nu:[],m:'bs'},
-{id:'injelly',name:'能量果冻',cat:'drink',amt:1,unit:'袋',g:180,kcal:180,p:0,c:45,f:0,price:200,effort:0,cv:1,al:[],dl:[],nu:['维C'],m:'bs'},
-{id:'whey',name:'乳清蛋白粉（可选）',cat:'drink',amt:1,unit:'勺',g:21,kcal:83,p:15,c:2.5,f:1.3,price:70,effort:0,al:['milk'],dl:['蛋白粉'],nu:[],m:'bs'},
-// 国内常见（价格同样按日元估算）
-{id:'beef',name:'卤牛肉（熟食）',cat:'protein',amt:100,unit:'g',g:100,kcal:190,p:30,c:3,f:7,price:450,effort:0,al:[],dl:['牛肉'],nu:['铁','B12','锌'],m:'ld'},
-{id:'pork',name:'猪里脊',cat:'protein',amt:100,unit:'g',g:100,kcal:143,p:20,c:1,f:6,price:200,effort:2,al:[],dl:['猪肉'],nu:['锌'],m:'ld'},
-{id:'sardine',name:'沙丁鱼罐头',cat:'protein',amt:1,unit:'罐',g:100,kcal:208,p:24.6,c:0,f:11.5,price:200,effort:0,al:['fish'],dl:['鱼'],nu:['钙','B12','维D'],m:'ld',maxM:1.5},
-{id:'tunawater',name:'水浸金枪鱼罐头',cat:'protein',amt:1,unit:'罐',g:70,kcal:50,p:11.5,c:0,f:0.5,price:130,effort:0,al:['fish'],dl:['鱼'],nu:['B12'],m:'ld'},
-{id:'noodle',name:'挂面（干）',cat:'staple',amt:100,unit:'g',g:100,kcal:350,p:11,c:72,f:1.3,price:40,effort:2,al:['wheat'],dl:[],nu:[],m:'ld',maxM:2},
-{id:'mantou',name:'馒头',cat:'staple',amt:1,unit:'个',g:100,kcal:223,p:7,c:47,f:1.1,price:80,effort:0,al:['wheat'],dl:[],nu:[],m:'bld'},
-{id:'wwbread',name:'全麦面包',cat:'staple',amt:2,unit:'片',g:70,kcal:175,p:8.5,c:29,f:2.4,price:80,effort:0,al:['wheat'],dl:[],nu:['纤维'],m:'bld'},
-{id:'potato',name:'土豆',cat:'staple',amt:1,unit:'个',g:200,kcal:154,p:4,c:35,f:0.2,price:50,effort:1,al:[],dl:['土豆'],nu:['维C'],m:'ld',maxM:2},
-{id:'corn',name:'甜玉米',cat:'staple',amt:1,unit:'根',g:150,kcal:168,p:4.8,c:33,f:1.8,price:150,effort:1,al:[],dl:['玉米'],nu:['纤维'],m:'bld',maxM:2},
-{id:'dumpling',name:'速冻水饺（猪肉白菜）',cat:'staple',amt:10,unit:'个',g:200,kcal:400,p:16,c:50,f:15,price:200,effort:2,al:['wheat'],dl:['猪肉'],nu:[],m:'ld',maxM:2},
-{id:'greens',name:'小青菜/油菜',cat:'veg',amt:250,unit:'g',g:250,kcal:35,p:3.5,c:5,f:0.5,price:150,effort:2,al:[],dl:[],nu:['钙','维C','维A'],m:'ld'},
-{id:'freshspinach',name:'菠菜',cat:'veg',amt:200,unit:'g',g:200,kcal:46,p:5.8,c:7,f:0.8,price:150,effort:2,al:[],dl:['菠菜'],nu:['铁','维A'],m:'ld'},
-{id:'tomato',name:'番茄',cat:'veg',amt:1,unit:'个',g:200,kcal:36,p:1.8,c:7.8,f:0.4,price:100,effort:0,al:[],dl:['番茄'],nu:['维C'],m:'ld'},
-{id:'lettuce',name:'生菜',cat:'veg',amt:200,unit:'g',g:200,kcal:30,p:2.7,c:4,f:0.4,price:150,effort:0,al:[],dl:[],nu:['维A'],m:'ld'},
-{id:'orange',name:'橙子',cat:'fruit',amt:1,unit:'个',g:200,kcal:94,p:1.8,c:23,f:0.3,price:120,effort:0,al:[],dl:[],nu:['维C'],m:'bs'},
-{id:'raisin',name:'葡萄干',cat:'fruit',amt:30,unit:'g',g:30,kcal:90,p:0.9,c:24,f:0.1,price:40,effort:0,al:[],dl:[],nu:[],m:'bs'},
-{id:'pumpkinseed',name:'南瓜子仁',cat:'fat',amt:30,unit:'g',g:30,kcal:170,p:8.8,c:4,f:14.6,price:80,effort:0,al:[],dl:[],nu:['铁','锌'],m:'s'},
-{id:'sunflower',name:'葵花籽仁',cat:'fat',amt:30,unit:'g',g:30,kcal:175,p:6,c:6,f:15,price:60,effort:0,al:[],dl:[],nu:[],m:'s'},
-{id:'dailynuts',name:'每日坚果',cat:'fat',amt:1,unit:'小包',g:30,kcal:180,p:5,c:6,f:15.5,price:100,effort:0,al:['treenut'],dl:['坚果'],nu:[],m:'s'},
-{id:'sesame',name:'黑芝麻糊',cat:'drink',amt:1,unit:'袋',g:30,kcal:130,p:3,c:20,f:5,price:60,effort:1,al:['sesame'],dl:['芝麻'],nu:['铁','钙'],m:'bs'},
-{id:'plainsoy',name:'无糖豆浆',cat:'drink',amt:300,unit:'ml',g:300,kcal:99,p:9,c:4,f:5,price:80,effort:0,al:['soy'],dl:['豆制品'],nu:[],m:'bs'},
+/* ========== 食物库 ==========
+   营养值为每 100 克可食部分（参考中国食物成分表、USDA FoodData Central 的常见值），按每份克数换算；价格为每份的大致人民币价格。
+   字段：id, 名称, 类别, 每份数量, 单位, 每份克数, kcal, 蛋白质, 碳水, 脂肪, 每份价格, 精力(0即食/1微波烧水/2要煮), 过敏原, 不爱吃标签, 营养亮点, 适合哪顿(b早 l午 d晚 s加餐), 最大倍数 */
+const RAW=[
+// —— 蛋白质 ——
+['egg','鸡蛋','protein',2,'个',100,144,13.3,2.8,8.8,1.6,1,'egg','鸡蛋','B12 维A','bld'],
+['luegg','卤蛋/茶叶蛋','protein',1,'个',55,150,12.5,2.5,9.5,1.5,0,'egg','鸡蛋','B12','blds'],
+['quail','卤鹌鹑蛋','protein',8,'个',80,160,12.8,2.1,11.1,3,0,'egg','鸡蛋','B12 铁','lds'],
+['chickbreast','鸡胸肉','protein',100,'g',100,120,22.5,0,2.6,3,2,'','鸡肉','','ld'],
+['rtchicken','即食鸡胸肉','protein',1,'袋',100,120,24,2,2,5,0,'','鸡肉','','bld'],
+['chickleg','去骨鸡腿肉','protein',150,'g',150,181,16,0,13,5,2,'','鸡肉','锌','ld'],
+['porkloin','猪里脊','protein',100,'g',100,155,20.2,0.7,7.9,4,2,'','猪肉','锌','ld'],
+['porkmince','猪肉末','protein',100,'g',100,260,17,0,21,3.5,2,'','猪肉','锌','ld'],
+['porkliver','猪肝','protein',80,'g',80,129,19.3,5,3.5,1.5,2,'','内脏','铁 维A B12','ld',1],
+['beef','瘦牛肉','protein',100,'g',100,106,20.2,1.2,2.3,8,2,'','牛肉','铁 锌 B12','ld'],
+['beefbrine','卤牛肉/酱牛肉','protein',100,'g',100,246,31.4,3.2,11.9,9,0,'','牛肉','铁 锌 B12','ld'],
+['beefslice','肥牛片','protein',100,'g',100,250,15,0,21,7,2,'','牛肉','铁 锌 B12','ld'],
+['lamb','羊肉片','protein',100,'g',100,203,19,0,14.1,8,2,'','羊肉','铁 锌 B12','ld'],
+['salmon','三文鱼','protein',100,'g',100,139,17.2,0,7.8,12,2,'fish','鱼','Omega-3 B12 维D','ld'],
+['basa','冷冻巴沙鱼片','protein',150,'g',150,90,15,0,3,4.5,2,'fish','鱼','B12','ld'],
+['hairtail','带鱼段','protein',150,'g',150,127,17.7,3.1,4.9,6,2,'fish','鱼','B12','ld'],
+['tuna','水浸金枪鱼罐头','protein',1,'罐',120,116,25.5,0,0.8,9,0,'fish','鱼','B12','ld'],
+['sardine','沙丁鱼罐头','protein',1,'罐',100,208,24.6,0,11.5,8,0,'fish','鱼','钙 B12 Omega-3 维D','ld',1.5],
+['mackerel','青花鱼罐头','protein',1,'罐',150,174,20.9,0.2,10.7,10,0,'fish','鱼','钙 B12 Omega-3 维D','ld',1.5],
+['fishsausage','鱼肉肠','protein',2,'根',140,158,11,13,7,4,0,'fish','鱼','钙','blds'],
+['kanikama','蟹柳','protein',1,'包',75,90,12,9,0.5,4,0,'fish shellfish','鱼 虾/海鲜','','lds'],
+['shrimp','冷冻虾仁','protein',100,'g',100,85,20,0,0.5,8,2,'shellfish','虾/海鲜','锌','ld'],
+['beefjerky','牛肉干','protein',30,'g',30,410,33,11,26,5,0,'','牛肉','铁 锌','s'],
+['tofu','老豆腐/北豆腐','protein',200,'g',200,98,12.2,2,4.8,2.5,0,'soy','豆制品','钙 铁','ld'],
+['silktofu','内酯豆腐','protein',1,'盒',300,50,5,2.9,1.9,2.5,0,'soy','豆制品','钙','ld'],
+['dougan','卤豆干/香干','protein',100,'g',100,140,16,10,3.6,3,0,'soy','豆制品','钙 铁','lds'],
+['friedtofu','油豆腐','protein',100,'g',100,245,17,4.9,17.6,3,1,'soy','豆制品','钙 铁','ld'],
+['fuzhu','腐竹（干）','protein',40,'g',40,461,44.6,22,21.7,2.5,2,'soy','豆制品','铁','ld'],
+['natto','纳豆','protein',1,'盒',50,200,16.5,12,10,5,0,'soy','纳豆 豆制品','铁 纤维','bld'],
+['edamame','冷冻毛豆仁','protein',150,'g',150,131,13.1,10.5,5,3.5,1,'soy','豆制品','纤维 铁','lds'],
+['chickpea','鹰嘴豆罐头','protein',1,'罐',240,139,7,22,2.6,8,0,'','豆类','纤维 铁','ld'],
+['kidneybean','红腰豆罐头','protein',1,'罐',240,127,8.7,22.8,0.5,7,0,'','豆类','纤维 铁','ld'],
+// —— 主食 ——
+['rice','米饭（熟）','staple',200,'g',200,116,2.6,25.9,0.3,0.8,1,'','','','ld',2],
+['brownrice','糙米饭（熟）','staple',200,'g',200,123,2.7,25.6,1,1.2,1,'','','纤维','ld',2],
+['packrice','盒装微波米饭','staple',1,'盒',200,116,2.6,25.9,0.3,5,1,'','','','ld',2],
+['onigiri','饭团','staple',1,'个',110,165,4,35,1,6,0,'','','','bld',2],
+['congee','八宝粥罐头','staple',1,'罐',360,80,1.5,17,0.5,4,0,'','','纤维','b',1],
+['mantou','馒头','staple',1,'个',100,223,7,47,1.1,1,0,'wheat','','','bld',2],
+['huajuan','花卷','staple',1,'个',100,211,6.4,45.6,1,1,0,'wheat','','','bld',2],
+['meatbun','肉包子','staple',1,'个',100,227,8,30,8,2,0,'wheat','猪肉','','bld',3],
+['vegbun','菜包子','staple',1,'个',100,190,6,33,4,1.5,0,'wheat','','','bld',3],
+['wwbread','全麦面包','staple',2,'片',70,250,12.5,43,3.5,2,0,'wheat','','纤维','bld',3],
+['toast','白吐司','staple',2,'片',70,266,9,49,3.3,1.5,0,'wheat','','','bld',3],
+['bagel','贝果','staple',1,'个',100,257,10,50,1.5,5,0,'wheat','','','bl',1.5],
+['shouzhua','速冻手抓饼','staple',1,'张',90,300,6,38,14,1.5,2,'wheat','','','b',2],
+['noodle','挂面（干）','staple',100,'g',100,346,10.3,75.6,0.6,1,2,'wheat','','','ld',2],
+['udon','冷冻乌冬面','staple',1,'份',200,105,2.6,21.6,0.4,3,1,'wheat','乌冬','','ld',2],
+['soba','荞麦面（干）','staple',100,'g',100,344,14,69,2.3,2,2,'buckwheat wheat','','纤维','ld',1.5],
+['pasta','意面（干）','staple',100,'g',100,371,13,75,1.5,2,2,'wheat','','','ld',1.5],
+['ricenoodle','米粉/米线（干）','staple',100,'g',100,346,8,78,0.1,1.5,2,'','','','ld',1.5],
+['niangao','年糕','staple',100,'g',100,154,3.3,34.7,0.6,1.5,2,'','','','ld',2],
+['dumpling','速冻水饺','staple',10,'个',200,200,8,25,7.5,5,2,'wheat','猪肉','','ld',2],
+['wonton','速冻馄饨','staple',15,'个',200,180,8,24,6,5,2,'wheat','猪肉','','bld',2],
+['friedrice','冷冻炒饭','staple',225,'g',225,173,4,27.6,4.9,8,1,'egg wheat soy','','','ld',2],
+['oats','燕麦片','staple',40,'g',40,377,15,66.9,6.7,0.8,1,'wheat','燕麦','纤维 铁','b',2],
+['granola','烘焙燕麦片/格兰诺拉','staple',50,'g',50,440,8,70,15,3,0,'wheat','燕麦','纤维 铁','b',2],
+['sweetpotato','红薯','staple',1,'个',200,90,1.4,21,0.2,2,1,'','红薯','维A 纤维 维C','bld',1.5],
+['bakedsp','烤红薯（现成）','staple',1,'个',200,120,1.8,28,0.2,6,0,'','红薯','维A 纤维 维C','bld',1.5],
+['purplesp','紫薯','staple',1,'个',200,106,1.5,25,0.2,3,1,'','红薯','纤维','bld',1.5],
+['potato','土豆','staple',1,'个',200,77,2,17.5,0.1,1,1,'','土豆','维C','ld',2],
+['corn','甜玉米','staple',1,'根',150,112,4,22.8,1.2,2,1,'','玉米','纤维','bld',2],
+['yam','山药','staple',200,'g',200,57,1.9,12.4,0.2,4,1,'','','','ld',1.5],
+// —— 蔬菜 ——
+['broccoli','冷冻西兰花','veg',150,'g',150,34,2.8,7,0.4,3,1,'','西兰花','维C 纤维','ld'],
+['spinach','菠菜','veg',200,'g',200,28,2.6,4.5,0.3,3,2,'','菠菜','铁 维A','ld'],
+['frzspinach','冷冻菠菜','veg',100,'g',100,28,2.6,4.5,0.3,2,1,'','菠菜','铁 维A','ld'],
+['bokchoy','小青菜/油菜','veg',250,'g',250,18,1.6,3,0.3,2,2,'','','钙 维C 维A','ld'],
+['lettuce','生菜','veg',200,'g',200,15,1.4,2.9,0.2,2,0,'','','维A','ld'],
+['saladmix','袋装沙拉菜','veg',1,'袋',130,20,1.2,3.5,0.2,5,0,'','','维C 维A','ld'],
+['tomato','番茄','veg',1,'个',200,18,0.9,3.9,0.2,2,0,'','番茄','维C','ld'],
+['cherrytom','小番茄','veg',150,'g',150,25,1,5.8,0.2,4,0,'','番茄','维C 维A','lds'],
+['cucumber','黄瓜','veg',1,'根',200,15,0.7,3.6,0.1,1.5,0,'','黄瓜','','ld'],
+['carrot','胡萝卜','veg',1,'根',120,41,0.9,9.6,0.2,0.8,0,'','胡萝卜','维A 纤维','ld'],
+['mixveg','冷冻什锦蔬菜','veg',150,'g',150,65,3,13,0.5,3,1,'','胡萝卜 玉米','维A 纤维','ld'],
+['pumpkin','南瓜','veg',150,'g',150,33,1,7.5,0.1,2,1,'','南瓜','维A 维C 纤维','ld'],
+['mungsprout','绿豆芽','veg',200,'g',200,18,1.7,2.6,0.1,1.5,1,'','豆芽','维C','ld'],
+['soysprout','黄豆芽','veg',200,'g',200,44,4.5,4.5,1.6,2,1,'soy','豆芽','维C 纤维','ld'],
+['cabbage','卷心菜/包菜','veg',200,'g',200,24,1.3,5.8,0.1,1.5,1,'','','维C 纤维','ld'],
+['napa','大白菜','veg',250,'g',250,17,1.5,3.2,0.1,1.5,2,'','','维C','ld'],
+['eggplant','茄子','veg',200,'g',200,25,1,5.9,0.2,2.5,2,'','茄子','纤维','ld'],
+['greenpepper','青椒','veg',150,'g',150,20,0.9,4.6,0.2,2,2,'','青椒','维C','ld'],
+['bellpepper','彩椒','veg',150,'g',150,26,1,6,0.3,4,0,'','青椒','维C 维A','lds'],
+['shiitake','鲜香菇','veg',100,'g',100,26,2.2,5.2,0.3,3,2,'','菌菇','纤维','ld'],
+['enoki','金针菇','veg',150,'g',150,32,2.4,6,0.4,2,2,'','菌菇','纤维','ld'],
+['woodear','木耳（泡发）','veg',100,'g',100,27,1.5,6,0.2,2,2,'','菌菇','纤维 铁','ld'],
+['kelp','凉拌海带丝','veg',100,'g',100,30,1.2,6,0.2,3,0,'','','碘 纤维','ld'],
+['celery','芹菜','veg',200,'g',200,14,0.8,3.9,0.1,2,2,'','芹菜','纤维','ld'],
+['okra','秋葵','veg',150,'g',150,33,1.9,7.5,0.2,4,1,'','','纤维 维C 钙','ld'],
+// —— 水果 ——
+['banana','香蕉','fruit',1,'根',120,93,1.4,22,0.2,1.5,0,'','香蕉','','bs'],
+['apple','苹果','fruit',1,'个',200,53,0.2,13.5,0.2,2,0,'','','纤维','bs'],
+['orange','橙子','fruit',1,'个',200,48,0.8,11.1,0.2,2.5,0,'','','维C','bs'],
+['mandarin','橘子','fruit',2,'个',150,44,0.8,10.3,0.4,2,0,'','','维C','bs'],
+['kiwi','猕猴桃','fruit',2,'个',150,61,1.1,14.5,0.5,3,0,'','','维C 纤维','bs'],
+['grape','葡萄','fruit',150,'g',150,44,0.5,10.3,0.2,4,0,'','','','bs'],
+['pear','梨','fruit',1,'个',250,51,0.4,13.3,0.2,2,0,'','','纤维','bs'],
+['strawberry','草莓','fruit',150,'g',150,32,1,7.1,0.2,6,0,'','','维C','bs'],
+['blueberry','蓝莓','fruit',100,'g',100,57,0.7,14.5,0.3,8,0,'','','维C 纤维','bs'],
+['watermelon','西瓜','fruit',300,'g',300,31,0.5,6.8,0.1,3,0,'','','','bs'],
+['mango','芒果','fruit',1,'个',200,60,0.8,15,0.4,5,0,'','','维A 维C','bs'],
+['dragonfruit','火龙果','fruit',1,'个',200,55,1.1,13.3,0.2,4,0,'','','纤维','bs'],
+['peach','桃','fruit',1,'个',200,42,0.6,10.1,0.1,3,0,'','','','bs'],
+['pomelo','柚子','fruit',200,'g',200,42,0.8,9.5,0.2,2,0,'','','维C','bs'],
+['raisin','葡萄干','fruit',30,'g',30,320,2.5,78,0.4,1,0,'','','','bs'],
+['jujube','红枣（干）','fruit',30,'g',30,276,3.2,67.8,0.5,1.5,0,'','','纤维','bs'],
+['prune','西梅干','fruit',50,'g',50,240,2.2,64,0.4,3,0,'','','纤维','bs'],
+['chestnut','即食甘栗仁','fruit',1,'袋',50,220,4,46,1.5,4,0,'treenut','坚果','纤维','bs'],
+['vegjuice','蔬菜汁','fruit',200,'ml',200,35,0.5,8,0,4,0,'','','维A 维C','bs'],
+// —— 高能量零食 ——
+['peanut','熟花生米','fat',30,'g',30,585,24,21,49,0.8,0,'peanut','花生','','s'],
+['pb','花生酱','fat',2,'勺',32,588,25,20,50,1.5,0,'peanut','花生','','s'],
+['mixnuts','混合坚果','fat',30,'g',30,607,20,21,54,3,0,'treenut','坚果','','s'],
+['walnut','核桃仁','fat',25,'g',25,654,15,14,65,2.5,0,'treenut','坚果','Omega-3','s'],
+['almond','杏仁','fat',25,'g',25,579,21,22,50,2.5,0,'treenut','坚果','钙','s'],
+['cashew','腰果','fat',25,'g',25,553,18,30,44,2.5,0,'treenut','坚果','铁 锌','s'],
+['pumpkinseed','南瓜子仁','fat',30,'g',30,559,30,11,49,1.5,0,'','','铁 锌','s'],
+['sunflower','葵花籽仁','fat',30,'g',30,584,21,20,51,1,0,'','','','s'],
+['avocado','牛油果','fat',0.5,'个',70,160,2,8.5,14.7,5,0,'','','纤维','bs'],
+['cheese','奶酪片','fat',2,'片',40,328,25.7,3.5,23.5,3,0,'milk','奶酪','钙 B12','bs'],
+['proteinbar','蛋白棒','fat',1,'根',50,380,30,40,12,8,0,'milk soy','蛋白粉','','s'],
+['energybar','营养能量块','fat',2,'根',40,500,10,52,28,5,0,'wheat egg milk soy','','','bs'],
+['oatbar','坚果燕麦棒','fat',1,'根',30,450,8,63,18,2.5,0,'wheat treenut','燕麦','纤维','s'],
+['cracker','苏打饼干','fat',50,'g',50,408,8.4,70,9,1.5,0,'wheat','','','s'],
+['darkchoc','黑巧克力','fat',20,'g',20,546,4.9,61,31,2,0,'milk','','铁','s'],
+// —— 奶 / 豆 / 冲饮 ——
+['milk','全脂牛奶','drink',250,'ml',250,65,3.2,4.8,3.6,3,0,'milk','牛奶','钙 B12','bs'],
+['lfmilk','零乳糖牛奶','drink',250,'ml',250,62,3.2,4.8,3.4,4,0,'milk','牛奶','钙 B12','bs'],
+['hpmilk','高蛋白牛奶','drink',250,'ml',250,60,6,5,1.5,5,0,'milk','牛奶','钙 B12','bs'],
+['milkpowder','全脂奶粉（冲一杯）','drink',30,'g',30,478,20.1,51.7,21.2,2,1,'milk','牛奶','钙 B12','bs'],
+['yogurt','原味酸奶','drink',200,'g',200,72,2.5,9.3,2.7,4,0,'milk','酸奶','钙 B12','bs'],
+['greekyog','希腊酸奶','drink',1,'杯',100,97,9,4,5,6,0,'milk','酸奶','钙 B12','bs'],
+['soymilk','无糖豆浆','drink',300,'ml',300,33,3,1.5,1.8,2,0,'soy','豆制品','','bs'],
+['oatmilk','燕麦奶','drink',250,'ml',250,46,0.5,6.5,1.5,4,0,'wheat','燕麦','钙','bs'],
+['sesame','黑芝麻糊','drink',1,'袋',30,430,9,64,15,1.5,1,'sesame','芝麻','铁 钙','bs'],
+['whey','乳清蛋白粉（可选）','drink',1,'勺',30,400,80,8,5,4,0,'milk','蛋白粉','','bs'],
+['jelly','能量果冻','drink',1,'袋',180,100,0,25,0,6,0,'','','维C','bs'],
+// —— 更多超市常见：肉蛋水产 ——
+['wings','鸡翅中','protein',4,'个',160,191,17.5,0,12.8,8,2,'','鸡肉','','ld'],
+['duck','卤鸭腿','protein',1,'个',150,200,18,3,13,10,0,'','鸭肉','铁','ld'],
+['spareribs','猪小排','protein',150,'g',150,278,16.7,0.7,23.1,8,2,'','猪肉','锌','ld',1.5],
+['porkbelly','五花肉','protein',100,'g',100,395,13.2,2.4,37,4,2,'','猪肉','','ld',1],
+['bacon','培根','protein',3,'片',45,417,13,1.4,40,5,1,'','猪肉','','bld',1],
+['ham','火腿片','protein',4,'片',60,145,16.5,1.5,8,5,0,'','猪肉','','bld'],
+['sausage','广式香肠','protein',1,'根',50,508,24.1,11.2,40.7,3,1,'','猪肉','','ld',1],
+['spam','午餐肉','protein',100,'g',100,300,13,3,26,4,0,'','猪肉','','bld',1],
+['steak','冷冻牛排','protein',1,'块',150,180,20,0,11,15,2,'','牛肉','铁 锌 B12','ld'],
+['beefball','牛肉丸','protein',8,'个',120,180,13,10,10,8,2,'','牛肉','','ld'],
+['fishball','鱼丸','protein',8,'个',120,100,10,10,2,5,2,'fish','鱼','','ld'],
+['shrimppaste','虾滑','protein',100,'g',100,100,14,6,2,10,2,'shellfish','虾/海鲜','','ld'],
+['squid','鱿鱼','protein',150,'g',150,75,17.4,0,0.8,10,2,'shellfish','虾/海鲜','锌 B12','ld'],
+['seabass','鲈鱼','protein',200,'g',200,105,18.6,0,3.4,15,2,'fish','鱼','B12','ld'],
+['tilapia','罗非鱼片','protein',150,'g',150,98,18.4,0,2,6,2,'fish','鱼','B12','ld'],
+['cod','鳕鱼','protein',100,'g',100,88,20.4,0.5,0.5,12,2,'fish','鱼','B12','ld'],
+['saltyegg','咸鸭蛋','protein',1,'个',60,190,12.7,6.3,12.7,2,0,'egg','鸡蛋','B12','bld',1],
+['century','皮蛋','protein',1,'个',60,171,14.2,4.5,10.7,1.5,0,'egg','鸡蛋','','ld',1.5],
+['qianzhang','千张/豆腐皮','protein',100,'g',100,260,24.5,5.5,16,3,2,'soy','豆制品','钙 铁','ld'],
+['suji','素鸡','protein',100,'g',100,192,16.5,4.2,12.5,3,0,'soy','豆制品','钙 铁','lds'],
+// —— 家常菜（超市熟食区 / 预制菜 / 自己简单做）——
+['tomegg','番茄炒蛋','protein',1,'份',200,100,5.5,4,7,5,1,'egg','鸡蛋 番茄','维C B12','ld'],
+['steamegg','鸡蛋羹','protein',1,'碗',200,60,5,1,4,2,1,'egg','鸡蛋','B12','bld'],
+['mapo','麻婆豆腐','protein',1,'份',250,110,7,4,7.5,6,1,'soy','豆制品 猪肉','钙 铁','ld'],
+['pidantofu','皮蛋豆腐','protein',1,'份',200,95,8,2,6,4,0,'soy egg','豆制品 鸡蛋','钙','ld'],
+['pepperpork','青椒肉丝','protein',1,'份',200,130,9,4,9,8,1,'','猪肉 青椒','维C','ld'],
+['yuxiang','鱼香肉丝','protein',1,'份',200,150,8,8,10,8,1,'','猪肉','','ld'],
+['kungpao','宫保鸡丁','protein',1,'份',200,180,13,8,11,9,1,'peanut','鸡肉 花生','','ld'],
+['colawings','可乐鸡翅','protein',1,'份',200,200,15,8,12,9,1,'','鸡肉','','ld'],
+['beefpotato','土豆炖牛肉','protein',1,'份',250,120,8,9,6,12,1,'','牛肉 土豆','铁 锌 维C','ld'],
+['tomatobrisket','番茄牛腩','protein',1,'份',250,120,9,5,7,15,1,'','牛肉 番茄','铁 维C','ld'],
+['currybeef','咖喱牛肉','protein',1,'份',200,130,8,9,7,12,1,'wheat','牛肉','铁','ld'],
+['shrimpegg','虾仁滑蛋','protein',1,'份',200,130,12,2,8,12,2,'egg shellfish','鸡蛋 虾/海鲜','B12','ld'],
+['steamfish','清蒸鲈鱼','protein',1,'份',200,105,18,1,3,15,2,'fish','鱼','B12','ld'],
+['suancaiyu','酸菜鱼','protein',1,'份',300,70,8,2,3.5,15,1,'fish','鱼','B12','ld'],
+['mincedeggplant','肉末茄子','veg',1,'份',200,140,5,6,11,7,1,'','猪肉 茄子','纤维','ld'],
+['garlicbroc','蒜蓉西兰花','veg',1,'份',200,55,3,6,2.5,5,1,'','西兰花','维C 纤维','ld'],
+['cabbagefry','手撕包菜','veg',1,'份',200,60,1.5,6,3.5,4,1,'','','维C 纤维','ld'],
+['stirgreens','清炒时蔬','veg',1,'份',200,50,2,4,3,4,1,'','','维C 维A 钙','ld'],
+['smashcuc','拍黄瓜','veg',1,'份',200,35,1,4,1.5,3,0,'','黄瓜','','ld'],
+['potatoshred','醋溜土豆丝','staple',1,'份',200,90,2,14,3.5,4,1,'','土豆','维C','ld'],
+['tomnoodle','番茄鸡蛋面','staple',1,'碗',450,90,4,14,2,6,2,'wheat egg','鸡蛋 番茄','维C','ld',1],
+// —— 更多主食 ——
+['millet','小米粥','staple',1,'碗',300,46,1.4,8.4,0.7,1,2,'','','','b',1.5],
+['blackrice','黑米/紫米饭','staple',200,'g',200,130,3,28,1,1.5,1,'','','纤维 铁','ld',2],
+['quinoa','藜麦饭','staple',150,'g',150,120,4.4,21.3,1.9,3,1,'','','纤维 铁','ld',2],
+['freshnoodle','鲜面条','staple',150,'g',150,284,8.5,58,1.1,2,2,'wheat','','','ld',1.5],
+['instnoodle','非油炸方便面','staple',1,'包',80,350,9,72,3,3,1,'wheat','','','ld',1],
+['vermicelli','粉丝（干）','staple',50,'g',50,338,0.8,83.7,0.2,1,2,'','','','ld',2],
+['hefen','河粉','staple',200,'g',200,140,2,31,0.3,3,2,'','','','ld',1.5],
+['baguette','法棍','staple',100,'g',100,270,9,54,2,5,0,'wheat','','','bl',1.5],
+['croissant','牛角包','staple',1,'个',60,406,8,46,21,4,0,'wheat milk egg','','','b',2],
+['shaobing','烧饼','staple',1,'个',100,280,8,50,5,2,0,'wheat','','','bld',2],
+['jianbing','煎饼果子','staple',1,'份',250,230,8,30,9,7,0,'wheat egg soy','鸡蛋','','b',1],
+['taro','芋头','staple',200,'g',200,79,2.2,18.1,0.2,3,1,'','','纤维','ld',1.5],
+['zongzi','速冻粽子','staple',1,'个',150,200,6,30,6,5,1,'','猪肉','','bld',2],
+['wotou','玉米面窝头','staple',1,'个',100,210,7,43,1.5,1.5,0,'','玉米','纤维','bld',2],
+['shaomai','烧麦','staple',4,'个',160,230,7,35,7,6,1,'wheat','猪肉','','bld',2],
+['xiaolongbao','小笼包','staple',8,'个',200,220,9,26,9,10,1,'wheat','猪肉','','bld',1.5],
+['pizza','速冻小披萨','staple',1,'个',180,260,11,30,10,15,1,'wheat milk','','钙','ld',1],
+['beanbun','豆沙包','staple',1,'个',100,240,6,50,2,1.5,0,'wheat','','','b',2],
+['flossbread','肉松面包','staple',1,'个',80,380,10,50,15,4,0,'wheat egg milk','','','b',2],
+// —— 更多蔬菜 ——
+['zucchini','西葫芦','veg',200,'g',200,19,0.8,3.8,0.2,2,2,'','','维C','ld'],
+['wintermelon','冬瓜','veg',300,'g',300,12,0.4,2.6,0.2,2,2,'','','','ld'],
+['loofah','丝瓜','veg',200,'g',200,21,1,4.2,0.2,3,2,'','','','ld'],
+['bittermelon','苦瓜','veg',150,'g',150,22,1,4.9,0.1,3,2,'','苦瓜','维C','ld'],
+['lotusroot','莲藕','veg',150,'g',150,70,1.9,16.4,0.2,3,2,'','','纤维 维C','ld'],
+['wosun','莴笋','veg',200,'g',200,15,1,2.8,0.1,2,2,'','','','ld'],
+['asparagus','芦笋','veg',150,'g',150,22,1.4,4.9,0.1,8,1,'','','维A 纤维','ld'],
+['snowpea','荷兰豆','veg',150,'g',150,30,2.5,5,0.3,4,2,'','','维C 纤维','ld'],
+['peashoot','豌豆苗','veg',150,'g',150,34,4,4.6,0.8,4,2,'','','维A 维C','ld'],
+['frzpeas','冷冻豌豆','veg',150,'g',150,81,5.4,14.5,0.4,3,1,'','','纤维 维C','ld'],
+['waterspinach','空心菜','veg',250,'g',250,20,2.2,3.6,0.3,2,2,'','','铁 维A 维C','ld'],
+['chrysanth','茼蒿','veg',200,'g',200,21,1.9,3.9,0.3,3,2,'','','维A 钙','ld'],
+['chive','韭菜','veg',150,'g',150,26,2.4,4.6,0.4,2,2,'','韭菜','维A','ld'],
+['gailan','芥兰','veg',200,'g',200,22,2.8,2.6,0.4,4,2,'','','钙 维C 维A','ld'],
+['caixin','菜心','veg',250,'g',250,25,2.8,4,0.5,3,2,'','','钙 维C','ld'],
+['babycab','娃娃菜','veg',250,'g',250,13,1.4,2.4,0.2,3,2,'','','维C','ld'],
+['redcab','紫甘蓝','veg',150,'g',150,31,1.4,7.4,0.2,2,0,'','','维C 纤维','ld'],
+['onion','洋葱','veg',150,'g',150,40,1.1,9,0.2,1.5,2,'','洋葱','','ld'],
+['radish','白萝卜','veg',250,'g',250,16,0.9,4,0.1,1.5,2,'','','维C','ld'],
+['kingoyster','杏鲍菇','veg',150,'g',150,35,2.5,7,0.3,4,2,'','菌菇','纤维','ld'],
+['oystermush','平菇','veg',150,'g',150,24,1.9,4.6,0.3,3,2,'','菌菇','纤维','ld'],
+['cornkernel','玉米粒罐头','veg',150,'g',150,75,2.5,16,1,4,0,'','玉米','纤维','ld'],
+['kimchi','韩式泡菜','veg',100,'g',100,15,1.1,2.4,0.5,4,0,'fish shellfish','','维C','ld'],
+// —— 更多水果 ——
+['hami','哈密瓜','fruit',300,'g',300,34,0.5,7.9,0.1,5,0,'','','维A 维C','bs'],
+['pineapple','菠萝','fruit',200,'g',200,41,0.5,10.8,0.1,4,0,'','','维C','bs'],
+['cherry','车厘子/樱桃','fruit',150,'g',150,63,1.1,16,0.2,15,0,'','','','bs'],
+['lychee','荔枝','fruit',150,'g',150,70,0.9,16.6,0.2,8,0,'','','维C','bs'],
+['longan','龙眼','fruit',150,'g',150,71,1.2,16.6,0.1,6,0,'','','维C','bs'],
+['pomegranate','石榴','fruit',150,'g',150,72,1.4,18.7,0.2,5,0,'','','纤维','bs'],
+['persimmon','柿子','fruit',1,'个',200,71,0.4,18.5,0.1,3,0,'','','维A 纤维','bs'],
+['plum','李子','fruit',200,'g',200,38,0.7,8.7,0.2,4,0,'','','','bs'],
+['durian','榴莲','fruit',100,'g',100,150,2.6,28.3,3.3,15,0,'','榴莲','维C','bs'],
+['passion','百香果','fruit',2,'个',60,97,2.2,23,0.7,4,0,'','','纤维 维C','bs'],
+['fig','无花果','fruit',2,'个',100,74,0.8,19,0.3,6,0,'','','纤维 钙','bs'],
+['dmango','芒果干','fruit',30,'g',30,319,2,79,0.8,3,0,'','','维A','bs'],
+['dcranberry','蔓越莓干','fruit',30,'g',30,308,0.1,82,1.4,3,0,'','','','bs'],
+['ddate','椰枣','fruit',30,'g',30,277,1.8,75,0.2,3,0,'','','纤维','bs'],
+// —— 更多零食 ——
+['pistachio','开心果仁','fat',25,'g',25,562,20,28,45,4,0,'treenut','坚果','','s'],
+['macadamia','夏威夷果仁','fat',25,'g',25,718,7.9,13.8,75.8,5,0,'treenut','坚果','','s'],
+['pecan','碧根果仁','fat',25,'g',25,691,9.2,13.9,72,5,0,'treenut','坚果','','s'],
+['hazelnut','榛子仁','fat',25,'g',25,628,15,16.7,60.8,4,0,'treenut','坚果','','s'],
+['pinenut','松子仁','fat',20,'g',20,673,13.7,13,68,5,0,'treenut','坚果','锌','s'],
+['coconut','烤椰子片','fat',30,'g',30,600,6,30,50,3,0,'','','纤维','s'],
+['wwcracker','全麦饼干','fat',40,'g',40,450,8,65,16,2,0,'wheat','','纤维','s'],
+['ricecracker','米饼','fat',30,'g',30,400,6,80,6,2,0,'','','','s'],
+// —— 更多饮品 ——
+['walnutmilk','核桃露','drink',1,'罐',240,60,1,7,3,4,0,'treenut','坚果','','bs'],
+['peanutmilk','花生牛奶','drink',1,'瓶',250,70,2,9,3,4,0,'peanut milk','花生 牛奶','钙','bs'],
+['blacksoy','无糖黑豆浆','drink',300,'ml',300,35,3.3,1.5,1.8,3,0,'soy','豆制品','铁','bs'],
+['chocmilk','巧克力牛奶','drink',250,'ml',250,83,3.2,10.4,3.4,4,0,'milk','牛奶','钙 B12','bs'],
+['soypowder','豆浆粉（冲一杯）','drink',30,'g',30,420,25,40,18,2,1,'soy','豆制品','铁','bs'],
+['lotuspowder','藕粉','drink',30,'g',30,372,0.2,93,0,2,1,'','','','bs'],
 ];
+const sp=s=>s?s.split(' '):[];
+const FOODS=RAW.map(r=>{const k=r[5]/100;return {id:r[0],name:r[1],cat:r[2],amt:r[3],unit:r[4],g:r[5],
+  kcal:Math.round(r[6]*k),p:+(r[7]*k).toFixed(1),c:+(r[8]*k).toFixed(1),f:+(r[9]*k).toFixed(1),
+  price:r[10],effort:r[11],al:sp(r[12]),dl:sp(r[13]),nu:sp(r[14]),m:r[15],maxM:r[16],raw:r[0]==='rice'||r[0]==='brownrice'?0.43:undefined};});
 
 const ALLERGENS=[['milk','牛奶/乳制品'],['egg','鸡蛋'],['peanut','花生'],['treenut','坚果'],['soy','大豆'],['wheat','小麦/麸质'],['fish','鱼类'],['shellfish','虾蟹贝类'],['sesame','芝麻'],['buckwheat','荞麦']];
-const DISLIKES=['鸡肉','猪肉','牛肉','鱼','虾/海鲜','鸡蛋','牛奶','酸奶','奶酪','豆制品','纳豆','燕麦','乌冬','红薯','土豆','玉米','南瓜','菠菜','胡萝卜','西兰花','番茄','黄瓜','豆芽','香蕉','花生','坚果','芝麻','蛋白粉'];
+const DISLIKES=['鸡肉','猪肉','牛肉','羊肉','鸭肉','鱼','虾/海鲜','内脏','鸡蛋','牛奶','酸奶','奶酪','豆制品','纳豆','豆类','燕麦','乌冬','红薯','土豆','玉米','南瓜','菠菜','胡萝卜','西兰花','番茄','黄瓜','茄子','青椒','菌菇','豆芽','芹菜','苦瓜','韭菜','洋葱','香蕉','榴莲','花生','坚果','芝麻','蛋白粉'];
 const MEALS=[
   {k:'b',n:'早餐',slots:['staple','protein','drink']},
   {k:'s1',n:'加餐',slots:['fruit','fat']},
@@ -283,7 +456,7 @@ const todayStr=()=>ds(new Date());
 const todayIdx=()=>(new Date().getDay()+6)%7;
 function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>el.classList.remove('show'),1800);}
 
-const DEFAULT={sex:'f',age:25,height:163,weight:45,activity:'1',budget:1200,effort:'1',allergens:[],dislikes:['鸡肉'],custom:''};
+const DEFAULT={sex:'f',age:25,height:163,weight:45,activity:'1',budget:30,effort:'1',allergens:[],dislikes:['鸡肉'],custom:''};
 let S={settings:null,targets:null,plan:null};
 try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);S={settings:o.settings||null,targets:o.targets||null,plan:o.plan||null};}}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
@@ -378,6 +551,7 @@ function genDay(){
   }
   return fill(items);
 }
+const famOf=f=>f.cat==='protein'?(f.al.includes('fish')||f.al.includes('shellfish')?'sea':f.al.includes('soy')?'soy':f.al.includes('egg')&&!f.dl.some(d=>/肉/.test(d))?'egg':(f.dl.find(d=>/肉/.test(d))||'other')):null;
 function score(items,ctx){
   const t=totals(items),goal=planKcal(),P=S.targets.p,budget=+S.settings.budget;
   let s=Math.abs(t.kcal-goal)/goal*100;
@@ -385,25 +559,30 @@ function score(items,ctx){
   s+=ESS.filter(n=>!t.nutr.has(n)).length*12;
   if(t.vegG<300) s+=(300-t.vegG)/20;
   if(t.cost>budget) s+=(t.cost/budget-1)*100;
-  s+=t.effort*0.8;
+  s+=t.effort*0.6;
+  // 当天：蛋白质来源别撞类（比如午晚都是鱼）
+  const fams=items.map(i=>famOf(F(i.id))).filter(Boolean);
+  s+=(fams.length-new Set(fams).size)*4;
   if(ctx){
-    items.forEach(i=>{if(ctx.weekSet.has(i.id)) s-=1.2;});
-    const nb=[ctx.prev,ctx.next].filter(Boolean);
-    items.forEach(i=>{nb.forEach(d=>{if(d.some(p=>p.id===i.id&&p.meal===i.meal&&i.cat!=='staple')) s+=2.5;});});
+    const cnt=ctx.counts||{};
+    items.forEach(i=>{
+      const n=cnt[i.id]||0, st=i.cat==='staple'&&['rice','packrice','brownrice'].includes(i.id);
+      if(!st) s+=n*n*2.5;               // 一周里出现越多次，扣分越重
+      [ctx.prev,ctx.next].filter(Boolean).forEach(d=>{if(!st&&d.some(p=>p.id===i.id)) s+=4;}); // 和前后一天撞菜
+    });
   }
   return s;
 }
 function bestDay(ctx,n){let best=null,bs=Infinity;for(let k=0;k<n;k++){const d=genDay(),s=score(d,ctx);if(s<bs){bs=s;best=d;}}return best;}
+function countIds(days,skip){const c={};days.forEach((d,i)=>{if(i!==skip&&d)d.forEach(it=>{c[it.id]=(c[it.id]||0)+1;});});return c;}
 function genWeek(){
-  const days=[],weekSet=new Set();
-  for(let d=0;d<7;d++){const best=bestDay({weekSet,prev:days[d-1]},160);best.forEach(i=>weekSet.add(i.id));days.push(best);}
+  const days=[];
+  for(let d=0;d<7;d++){const best=bestDay({counts:countIds(days),prev:days[d-1]},220);days.push(best);}
   return {id:rid(),days};
 }
 function regenDay(d){
-  const weekSet=new Set();S.plan.days.forEach((day,i)=>{if(i!==d)day.forEach(it=>weekSet.add(it.id));});
-  S.plan.days[d]=bestDay({weekSet,prev:S.plan.days[d-1],next:S.plan.days[d+1]},200);
+  S.plan.days[d]=bestDay({counts:countIds(S.plan.days,d),prev:S.plan.days[d-1],next:S.plan.days[d+1]},260);
 }
-
 /* ========== 展示 ========== */
 function qty(f,mult){
   const a=f.amt*mult;
@@ -454,7 +633,7 @@ function renderPlan(){
   const d=curTab,items=S.plan.days[d],t=totals(items);
   const ti=todayIdx();
   let h=`<div class="tabs">${WD.map((w,i)=>`<button class="tab${i===ti?' today':''}${i===d?' on':''}" data-tab="${i}">${i===ti?'今天':w}</button>`).join('')}</div>`;
-  h+=`<div class="daybar"><div class="daysum">${Math.round(t.kcal)} KCAL · 蛋白质 ${Math.round(t.p)}G · ${Math.round(t.cost)} 円</div><div class="chips">${ESS.map(n=>`<span class="chip ${t.nutr.has(n)?'ok':'no'}">${n}</span>`).join('')}</div></div>`;
+  h+=`<div class="daybar"><div class="daysum">${Math.round(t.kcal)} KCAL · 蛋白质 ${Math.round(t.p)}G · ${Math.round(t.cost)} 元</div><div class="chips">${ESS.map(n=>`<span class="chip ${t.nutr.has(n)?'ok':'no'}">${n}</span>`).join('')}</div></div>`;
   let idx=0;
   for(const m of MEALS){
     const list=items.filter(i=>i.meal===m.k);if(!list.length) continue;
@@ -463,10 +642,10 @@ function renderPlan(){
     const dish=list.map(i=>esc(shortName(F(i.id).name))).join(' + ');
     h+=`<div class="meal${idx++%2?' alt':''}"><div class="meal-head">
       <div class="art"><svg class="draw" viewBox="0 0 120 120" aria-hidden="true">${ART[m.k]}</svg>${burst(Math.round(mk)+'<br>KCAL')}</div>
-      <div class="meal-title"><span class="pill">${m.n} · 约 ${Math.round(cost)} 円</span><div class="dish">${dish}</div></div></div><div class="items">`;
+      <div class="meal-title"><span class="pill">${m.n} · 约 ${Math.round(cost)} 元</span><div class="dish">${dish}</div></div></div><div class="items">`;
     for(const it of list){
       const f=F(it.id);
-      h+=`<div class="item"><div>${esc(f.name)}<span class="qty">${qty(f,it.mult)}</span>${f.cv?'<span class="tag">便利店</span>':''}</div>
+      h+=`<div class="item"><div>${esc(f.name)}<span class="qty">${qty(f,it.mult)}</span></div>
         <span class="kc">${Math.round(f.kcal*it.mult)}</span><button class="mini" data-swap="${it.uid}">换</button></div>`;
     }
     h+=`</div></div>`;
@@ -489,11 +668,11 @@ function renderShop(){
     data[cat].sort((a,b)=>b.m-a.m).forEach(({f,m})=>{
       total+=f.price*m;
       const extra=f.raw?`（≈生米 ${Math.round(f.amt*m*f.raw/50)*50}g）`:'';
-      h+=`<div class="shop-line"><span>${esc(f.name)} ${qty(f,m)}${extra}</span><span class="hint">${Math.round(f.price*m)} 円</span></div>`;
+      h+=`<div class="shop-line"><span>${esc(f.name)} ${qty(f,m)}${extra}</span><span class="hint">${Math.round(f.price*m)} 元</span></div>`;
     });
     h+=`</div>`;
   }
-  h+=`<p class="total">一周约 <b>${Math.round(total)} 円</b>，平均每天 ${Math.round(total/7)} 円（预算 ${S.settings.budget} 円/天）。调料另算。</p>`;
+  h+=`<p class="total">一周约 <b>${Math.round(total)} 元</b>，平均每天 ${Math.round(total/7)} 元（预算 ${S.settings.budget} 元/天）。调料另算。</p>`;
   $('#shop').innerHTML=h;
 }
 function renderAll(){
@@ -521,7 +700,7 @@ document.addEventListener('click',e=>{
 });
 function onGo(){
   const f=$('#setup').elements,st={};
-  const chk=[['age',14,90,'年龄'],['height',120,220,'身高'],['weight',25,200,'体重'],['budget',300,10000,'预算']];
+  const chk=[['age',14,90,'年龄'],['height',120,220,'身高'],['weight',25,200,'体重'],['budget',10,300,'预算']];
   for(const [k,lo,hi,n] of chk){const v=parseFloat(f[k].value);if(!(v>=lo&&v<=hi)){toast(`${n}填得不太对（${lo}–${hi}）`);f[k].focus();return;}}
   ['sex','age','height','weight','activity','budget','effort','custom'].forEach(k=>st[k]=f[k].value);
   st.allergens=[...document.querySelectorAll('#alChips .chip.on')].map(x=>x.dataset.al);
@@ -549,7 +728,7 @@ $('#resetAll').addEventListener('click',()=>{
 (function migrate(){
   try{
     if(S.settings){
-      if(!(+S.settings.budget>=300)) S.settings.budget=DEFAULT.budget;
+      if(!(+S.settings.budget>=10&&+S.settings.budget<=300)) S.settings.budget=DEFAULT.budget;
       S.settings.allergens=(S.settings.allergens||[]).filter(k=>ALLERGENS.some(x=>x[0]===k));
       S.settings.dislikes=(S.settings.dislikes||[]).filter(k=>DISLIKES.includes(k));
       S.targets=calcTargets(S.settings);
