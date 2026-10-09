@@ -95,6 +95,10 @@ details[open] .fold::after{content:"收起 ↑"}
 form{margin-top:4px}
 .go{margin-top:30px}
 footer{margin-top:48px;padding-top:18px;padding-bottom:44px;border-top:var(--b) solid var(--ink);font:12px/1.7 var(--sans);color:var(--muted)}
+.refs{margin:14px 0 0;padding-left:20px}
+.refs li{margin:0 0 10px}
+.refs b{color:var(--ink)}
+footer a{color:var(--ink);text-decoration:underline;text-underline-offset:2px;word-break:break-all}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 20px;border-radius:999px;font:700 14px var(--sans);opacity:0;transition:.2s;pointer-events:none}
 #toast.show{opacity:1}
 @media (max-width:520px){
@@ -125,7 +129,7 @@ footer{margin-top:48px;padding-top:18px;padding-bottom:44px;border-top:var(--b) 
         <div><label>体重 KG</label><input name="weight" type="number" step="0.1" min="25" max="200" required></div>
         <div class="span2"><label>活动量</label><select name="activity">
           <option value="1">基本坐着/躺着</option><option value="2">每天会走走路</option><option value="3">每周运动3次以上</option></select></div>
-        <div><label>每天预算 元</label><input name="budget" type="number" min="10" max="300" step="1" required></div>
+        <div><label>每天伙食预算</label><select name="budget"><option value="30">省钱 · 20–30 元</option><option value="45">普通 · 30–45 元</option><option value="70">宽裕 · 45–70 元</option><option value="999">不限</option></select></div>
         <div><label>做饭精力</label><select name="effort">
           <option value="0">只想开袋即食</option><option value="1">微波炉+烧水壶</option><option value="2">能用一个锅煮</option></select></div>
       </div>
@@ -156,8 +160,17 @@ footer{margin-top:48px;padding-top:18px;padding-bottom:44px;border-top:var(--b) 
 
 </main>
 <footer>
-  营养值参考中国食物成分表和 USDA 的常见数值，价格是大致估算，仅供参考。有严重过敏请看配料表。
-  <button class="mini" id="resetAll" style="margin-left:6px">清空数据</button>
+  <span class="pill">数据来源</span>
+  <ol class="refs">
+    <li><b>热量计算：</b>基础代谢用 Mifflin-St Jeor 公式；维持量 = 基础代谢 × 活动系数（1.2 / 1.375 / 1.55）；目标 = 维持量 + 300 kcal。<br>Mifflin MD, St Jeor ST, et al. A new predictive equation for resting energy expenditure in healthy individuals. <i>Am J Clin Nutr</i>. 1990;51(2):241–247. <a href="https://doi.org/10.1093/ajcn/51.2.241" target="_blank" rel="noopener">doi:10.1093/ajcn/51.2.241</a></li>
+    <li><b>蛋白质：</b>每公斤体重 1.6 g，依据增肌相关的荟萃分析。<br>Morton RW, et al. A systematic review, meta-analysis and meta-regression of the effect of protein supplementation on resistance training-induced gains in muscle mass and strength in healthy adults. <i>Br J Sports Med</i>. 2018;52(6):376–384. <a href="https://doi.org/10.1136/bjsports-2017-097608" target="_blank" rel="noopener">doi:10.1136/bjsports-2017-097608</a></li>
+    <li><b>脂肪占比、每天蔬菜量：</b>中国营养学会《中国居民膳食营养素参考摄入量（2023版）》《中国居民膳食指南（2022）》。</li>
+    <li><b>BMI 分级：</b>世界卫生组织（WHO）成人 BMI 分类，低于 18.5 为偏瘦。</li>
+    <li><b>食物营养值：</b>参照杨月欣主编《中国食物成分表 标准版（第6版）》和美国农业部 USDA FoodData Central（<a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener">fdc.nal.usda.gov</a>）整理的常见近似值，未逐条核对原表；家常菜、加工食品因做法和品牌不同，误差更大。</li>
+    <li><b>价格：</b>按国内大中城市超市的常见零售价估算，页面只显示大致区间（约 ±20%）。实际价格会因城市、季节、品牌和促销浮动，购物时以店内价格为准。</li>
+  </ol>
+  <p>以上仅作日常饮食参考，不能代替医生或注册营养师的建议。有严重过敏请以食品包装上的配料表为准。
+  <button class="mini" id="resetAll" style="margin-left:6px">清空数据</button></p>
 </footer>
 <div id="toast"></div>
 
@@ -456,7 +469,11 @@ const todayStr=()=>ds(new Date());
 const todayIdx=()=>(new Date().getDay()+6)%7;
 function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>el.classList.remove('show'),1800);}
 
-const DEFAULT={sex:'f',age:25,height:163,weight:45,activity:'1',budget:30,effort:'1',allergens:[],dislikes:['鸡肉'],custom:''};
+const TIERS={'30':'省钱（20–30 元/天）','45':'普通（30–45 元/天）','70':'宽裕（45–70 元/天）','999':'不限'};
+const tierOf=b=>{b=+b;return b<=30?'30':b<=45?'45':b<=70?'70':'999';};
+/* 价格只显示区间：估算值上下浮动约 20% */
+const rng=x=>{const lo=Math.max(1,Math.floor(x*0.8)),hi=Math.max(lo+1,Math.ceil(x*1.2));return lo+'–'+hi+' 元';};
+const DEFAULT={sex:'f',age:25,height:163,weight:45,activity:'1',budget:'30',effort:'1',allergens:[],dislikes:['鸡肉'],custom:''};
 let S={settings:null,targets:null,plan:null};
 try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);S={settings:o.settings||null,targets:o.targets||null,plan:o.plan||null};}}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
@@ -633,7 +650,7 @@ function renderPlan(){
   const d=curTab,items=S.plan.days[d],t=totals(items);
   const ti=todayIdx();
   let h=`<div class="tabs">${WD.map((w,i)=>`<button class="tab${i===ti?' today':''}${i===d?' on':''}" data-tab="${i}">${i===ti?'今天':w}</button>`).join('')}</div>`;
-  h+=`<div class="daybar"><div class="daysum">${Math.round(t.kcal)} KCAL · 蛋白质 ${Math.round(t.p)}G · ${Math.round(t.cost)} 元</div><div class="chips">${ESS.map(n=>`<span class="chip ${t.nutr.has(n)?'ok':'no'}">${n}</span>`).join('')}</div></div>`;
+  h+=`<div class="daybar"><div class="daysum">${Math.round(t.kcal)} KCAL · 蛋白质 ${Math.round(t.p)}G · 约 ${rng(t.cost)}</div><div class="chips">${ESS.map(n=>`<span class="chip ${t.nutr.has(n)?'ok':'no'}">${n}</span>`).join('')}</div></div>`;
   let idx=0;
   for(const m of MEALS){
     const list=items.filter(i=>i.meal===m.k);if(!list.length) continue;
@@ -642,7 +659,7 @@ function renderPlan(){
     const dish=list.map(i=>esc(shortName(F(i.id).name))).join(' + ');
     h+=`<div class="meal${idx++%2?' alt':''}"><div class="meal-head">
       <div class="art"><svg class="draw" viewBox="0 0 120 120" aria-hidden="true">${ART[m.k]}</svg>${burst(Math.round(mk)+'<br>KCAL')}</div>
-      <div class="meal-title"><span class="pill">${m.n} · 约 ${Math.round(cost)} 元</span><div class="dish">${dish}</div></div></div><div class="items">`;
+      <div class="meal-title"><span class="pill">${m.n} · 约 ${rng(cost)}</span><div class="dish">${dish}</div></div></div><div class="items">`;
     for(const it of list){
       const f=F(it.id);
       h+=`<div class="item"><div>${esc(f.name)}<span class="qty">${qty(f,it.mult)}</span></div>
@@ -668,11 +685,11 @@ function renderShop(){
     data[cat].sort((a,b)=>b.m-a.m).forEach(({f,m})=>{
       total+=f.price*m;
       const extra=f.raw?`（≈生米 ${Math.round(f.amt*m*f.raw/50)*50}g）`:'';
-      h+=`<div class="shop-line"><span>${esc(f.name)} ${qty(f,m)}${extra}</span><span class="hint">${Math.round(f.price*m)} 元</span></div>`;
+      h+=`<div class="shop-line"><span>${esc(f.name)} ${qty(f,m)}${extra}</span><span class="hint">${rng(f.price*m)}</span></div>`;
     });
     h+=`</div>`;
   }
-  h+=`<p class="total">一周约 <b>${Math.round(total)} 元</b>，平均每天 ${Math.round(total/7)} 元（预算 ${S.settings.budget} 元/天）。调料另算。</p>`;
+  h+=`<p class="total">一周大约 <b>${rng(total)}</b>，平均每天 ${rng(total/7)}。预算档位：${TIERS[tierOf(S.settings.budget)]}。调料另算。</p>`;
   $('#shop').innerHTML=h;
 }
 function renderAll(){
@@ -700,7 +717,7 @@ document.addEventListener('click',e=>{
 });
 function onGo(){
   const f=$('#setup').elements,st={};
-  const chk=[['age',14,90,'年龄'],['height',120,220,'身高'],['weight',25,200,'体重'],['budget',10,300,'预算']];
+  const chk=[['age',14,90,'年龄'],['height',120,220,'身高'],['weight',25,200,'体重']];
   for(const [k,lo,hi,n] of chk){const v=parseFloat(f[k].value);if(!(v>=lo&&v<=hi)){toast(`${n}填得不太对（${lo}–${hi}）`);f[k].focus();return;}}
   ['sex','age','height','weight','activity','budget','effort','custom'].forEach(k=>st[k]=f[k].value);
   st.allergens=[...document.querySelectorAll('#alChips .chip.on')].map(x=>x.dataset.al);
@@ -728,7 +745,7 @@ $('#resetAll').addEventListener('click',()=>{
 (function migrate(){
   try{
     if(S.settings){
-      if(!(+S.settings.budget>=10&&+S.settings.budget<=300)) S.settings.budget=DEFAULT.budget;
+      S.settings.budget=(+S.settings.budget>=10&&+S.settings.budget<=300)||+S.settings.budget===999?tierOf(S.settings.budget):DEFAULT.budget;
       S.settings.allergens=(S.settings.allergens||[]).filter(k=>ALLERGENS.some(x=>x[0]===k));
       S.settings.dislikes=(S.settings.dislikes||[]).filter(k=>DISLIKES.includes(k));
       S.targets=calcTargets(S.settings);
