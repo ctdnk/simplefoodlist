@@ -129,7 +129,7 @@ footer a{color:var(--ink);text-decoration:underline;text-underline-offset:2px;wo
         <div><label>体重 KG</label><input name="weight" type="number" step="0.1" min="25" max="200" required></div>
         <div class="span2"><label>活动量</label><select name="activity">
           <option value="1">基本坐着/躺着</option><option value="2">每天会走走路</option><option value="3">每周运动3次以上</option></select></div>
-        <div><label>每天伙食预算</label><select name="budget"><option value="30">省钱 · 20–30 元</option><option value="45">普通 · 30–45 元</option><option value="70">宽裕 · 45–70 元</option><option value="999">不限</option></select></div>
+        <div><label>每天伙食预算</label><select name="budget"><option value="10">极省 · 尽量 10 元以下</option><option value="30">省钱 · 20–30 元</option><option value="45">普通 · 30–45 元</option><option value="70">宽裕 · 45–70 元</option><option value="999">不限</option></select></div>
         <div><label>做饭精力</label><select name="effort">
           <option value="0">只想开袋即食</option><option value="1">微波炉+烧水壶</option><option value="2">能用一个锅煮</option></select></div>
       </div>
@@ -175,6 +175,9 @@ footer a{color:var(--ink);text-decoration:underline;text-underline-offset:2px;wo
 <div id="toast"></div>
 
 <script>
+/* ========== 食物库 ==========
+   营养值为每 100 克可食部分（参考中国食物成分表、USDA FoodData Central 的常见值），按每份克数换算；价格为每份的大致人民币价格。
+   字段：id, 名称, 类别, 每份数量, 单位, 每份克数, kcal, 蛋白质, 碳水, 脂肪, 每份价格, 精力(0即食/1微波烧水/2要煮), 过敏原, 不爱吃标签, 营养亮点, 适合哪顿(b早 l午 d晚 s加餐), 最大倍数 */
 const RAW=[
 // —— 蛋白质 ——
 ['egg','鸡蛋','protein',2,'个',100,144,13.3,2.8,8.8,1.6,1,'egg','鸡蛋','B12 维A','bld'],
@@ -456,6 +459,7 @@ const KEY='lanren-zengzhong-v1';
 const FMAP=Object.fromEntries(FOODS.map(f=>[f.id,f]));
 const F=id=>FMAP[id];
 
+/* ========== 工具 ========== */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const rid=()=>Math.random().toString(36).slice(2,10);
@@ -465,8 +469,8 @@ const todayStr=()=>ds(new Date());
 const todayIdx=()=>(new Date().getDay()+6)%7;
 function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>el.classList.remove('show'),1800);}
 
-const TIERS={'30':'省钱（20–30 元/天）','45':'普通（30–45 元/天）','70':'宽裕（45–70 元/天）','999':'不限'};
-const tierOf=b=>{b=+b;return b<=30?'30':b<=45?'45':b<=70?'70':'999';};
+const TIERS={'10':'极省（尽量 10 元以下/天）','30':'省钱（20–30 元/天）','45':'普通（30–45 元/天）','70':'宽裕（45–70 元/天）','999':'不限'};
+const tierOf=b=>{b=+b;return b<=10?'10':b<=30?'30':b<=45?'45':b<=70?'70':'999';};
 /* 价格只显示区间：估算值上下浮动约 20% */
 const rng=x=>{const lo=Math.max(1,Math.floor(x*0.8)),hi=Math.max(lo+1,Math.ceil(x*1.2));return lo+'–'+hi+' 元';};
 const DEFAULT={sex:'f',age:25,height:163,weight:45,activity:'1',budget:'30',effort:'1',allergens:[],dislikes:['鸡肉'],custom:''};
@@ -475,6 +479,7 @@ try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);S={setti
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 let curTab=todayIdx();
 
+/* ========== 目标计算 ========== */
 function calcTargets(s){
   const w=+s.weight,h=+s.height,a=+s.age;
   const bmr=10*w+6.25*h-5*a+(s.sex==='m'?5:-161);
@@ -487,6 +492,7 @@ function calcTargets(s){
 }
 const planKcal=()=>S.targets.kcal;
 
+/* ========== 排餐 ========== */
 function customTerms(st){return (st.custom||'').split(/[,，、;；\s]+/).map(x=>x.trim()).filter(Boolean);}
 function allowed(f){
   const st=S.settings;
@@ -512,7 +518,7 @@ function addSnack(items,kind){
   if(items.filter(i=>i.extra).length>=3) return false;
   const used=new Set(items.map(i=>i.id));
   let pool=FOODS.filter(f=>f.m.includes('s')&&allowed(f)&&!used.has(f.id));
-  if(kind==='protein') pool=pool.filter(f=>f.p>=8).sort((a,b)=>b.p/b.kcal-a.p/a.kcal);
+  if(kind==='protein') pool=pool.filter(f=>f.p>=8).sort(budgetExp()?(a,b)=>b.p/b.price-a.p/a.price:(a,b)=>b.p/b.kcal-a.p/a.kcal);
   else pool=pool.filter(f=>['fat','drink','fruit'].includes(f.cat)).sort((a,b)=>b.kcal/b.price-a.kcal/a.price);
   if(!pool.length) return false;
   const f=pool[Math.floor(Math.random()*Math.min(3,pool.length))];
@@ -552,12 +558,18 @@ function fill(items){
   }
   return items;
 }
+const budgetExp=()=>{const b=+S.settings.budget;return b<=10?3:b<=30?1:0;};
+function pickW(c){const e=budgetExp();if(!e)return c[Math.floor(Math.random()*c.length)];
+  const w=c.map(f=>1/Math.pow(f.price/Math.max(40,f.kcal)*100+0.3,e));let r=Math.random()*w.reduce((a,b)=>a+b,0);
+  for(let i=0;i<c.length;i++){r-=w[i];if(r<=0)return c[i];}return c[c.length-1];}
 function genDay(){
   const items=[];
+  const tight=+S.settings.budget<=10;
   for(const m of MEALS) for(const cat of m.slots){
+    if(tight&&(cat==='fruit'||cat==='drink')) continue;
     const c=cands(cat,m.k).filter(f=>cat==='staple'||!items.some(i=>i.id===f.id));
     if(!c.length) continue;
-    const f=c[Math.floor(Math.random()*c.length)];
+    const f=pickW(c);
     items.push({uid:rid(),id:f.id,meal:m.k,cat,mult:1,extra:false});
   }
   return fill(items);
@@ -569,7 +581,7 @@ function score(items,ctx){
   s+=Math.max(0,P-t.p)*1.5;
   s+=ESS.filter(n=>!t.nutr.has(n)).length*12;
   if(t.vegG<300) s+=(300-t.vegG)/20;
-  if(t.cost>budget) s+=(t.cost/budget-1)*100;
+  if(t.cost>budget) s+=(t.cost/budget-1)*(budget<=10?160:100);
   s+=t.effort*0.6;
   // 当天：蛋白质来源别撞类（比如午晚都是鱼）
   const fams=items.map(i=>famOf(F(i.id))).filter(Boolean);
@@ -578,8 +590,8 @@ function score(items,ctx){
     const cnt=ctx.counts||{};
     items.forEach(i=>{
       const n=cnt[i.id]||0, st=i.cat==='staple'&&['rice','packrice','brownrice'].includes(i.id);
-      if(!st) s+=n*n*2.5;               // 一周里出现越多次，扣分越重
-      [ctx.prev,ctx.next].filter(Boolean).forEach(d=>{if(!st&&d.some(p=>p.id===i.id)) s+=4;}); // 和前后一天撞菜
+      if(!st) s+=n*n*(budget<=10?0.6:2.5);               // 一周里出现越多次，扣分越重
+      [ctx.prev,ctx.next].filter(Boolean).forEach(d=>{if(!st&&d.some(p=>p.id===i.id)) s+=budget<=10?1:4;}); // 和前后一天撞菜
     });
   }
   return s;
@@ -588,13 +600,13 @@ function bestDay(ctx,n){let best=null,bs=Infinity;for(let k=0;k<n;k++){const d=g
 function countIds(days,skip){const c={};days.forEach((d,i)=>{if(i!==skip&&d)d.forEach(it=>{c[it.id]=(c[it.id]||0)+1;});});return c;}
 function genWeek(){
   const days=[];
-  for(let d=0;d<7;d++){const best=bestDay({counts:countIds(days),prev:days[d-1]},220);days.push(best);}
+  for(let d=0;d<7;d++){const best=bestDay({counts:countIds(days),prev:days[d-1]},+S.settings.budget<=10?400:220);days.push(best);}
   return {id:rid(),days};
 }
 function regenDay(d){
   S.plan.days[d]=bestDay({counts:countIds(S.plan.days,d),prev:S.plan.days[d-1],next:S.plan.days[d+1]},260);
 }
-
+/* ========== 展示 ========== */
 function qty(f,mult){
   const a=f.amt*mult;
   if(f.unit==='g'||f.unit==='ml') return Math.round(a/10)*10+f.unit;
@@ -611,7 +623,7 @@ function fillForm(){
   ['sex','age','height','weight','activity','budget','effort','custom'].forEach(k=>{if(f[k])f[k].value=st[k]??DEFAULT[k];});
   renderChips();
 }
-
+/* 线稿插图 + 星形标签 */
 const PLATE='<ellipse cx="60" cy="62" rx="52" ry="48"/><ellipse cx="60" cy="62" rx="40" ry="36"/><path d="M13 47l4 2M107 47l-4 2M19 90l4-3M101 90l-4-3M60 112v-4M60 12v4M30 22l3 3M90 22l-3 3"/>';
 const ART={
   b:PLATE+'<path d="M36 52c4-12 22-15 31-7 10 2 14 14 8 22-6 10-24 12-34 6-8-5-9-13-5-21z"/><circle cx="53" cy="58" r="8"/><path d="M50 55c1-2 3-3 5-2"/><path d="M70 76c-2-8 4-13 10-11 6-4 14 2 12 9l-2 15H72z"/><path d="M76 80h12M77 86h10"/>',
@@ -644,6 +656,10 @@ function renderPlan(){
   const d=curTab,items=S.plan.days[d],t=totals(items);
   const ti=todayIdx();
   let h=`<div class="tabs">${WD.map((w,i)=>`<button class="tab${i===ti?' today':''}${i===d?' on':''}" data-tab="${i}">${i===ti?'今天':w}</button>`).join('')}</div>`;
+  if(+S.settings.budget<=10){
+    const wk=S.plan.days.reduce((a,d)=>a+totals(d).cost,0)/7;
+    if(wk>10) h+=`<div class="note">要吃够每天 ${planKcal()} kcal 和 ${S.targets.p}g 蛋白质，还要有蔬菜，按估算价格最低大约 ${rng(wk)}/天，暂时压不到 10 元以下。这一档已经去掉了固定的水果和饮品，尽量只用最便宜的食物。</div>`;
+  }
   h+=`<div class="daybar"><div class="daysum">${Math.round(t.kcal)} KCAL · 蛋白质 ${Math.round(t.p)}G · 约 ${rng(t.cost)}</div><div class="chips">${ESS.map(n=>`<span class="chip ${t.nutr.has(n)?'ok':'no'}">${n}</span>`).join('')}</div></div>`;
   let idx=0;
   for(const m of MEALS){
@@ -689,10 +705,10 @@ function renderShop(){
 function renderAll(){
   fillForm();
   if(!S.settings||!S.plan) return;
-  $('#setupDetails').open=false;
   renderTargets();renderPlan();renderShop();
 }
 
+/* ========== 交互 ========== */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b) return;
   if(b.dataset.al||b.dataset.dl){b.classList.toggle('on');return;}
@@ -734,6 +750,7 @@ $('#resetAll').addEventListener('click',()=>{
   location.reload();
 });
 
+/* 旧版数据兼容：餐单里有已删除的食物就按当前设置重排 */
 (function migrate(){
   try{
     if(S.settings){
