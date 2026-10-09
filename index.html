@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>糊弄一顿是一顿</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#111;--paper:#fff;--muted:#666;--yellow:#f4e925;--b:2px;
+  --mono:"Space Mono","Noto Sans SC",ui-monospace,monospace;--sans:"Noto Sans SC",-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.65 var(--sans)}
+main,header,footer{max-width:720px;margin:0 auto;padding-left:20px;padding-right:20px}
+header{padding-top:40px;padding-bottom:6px;position:relative}
+h1{font:900 clamp(38px,10vw,60px)/1.05 var(--sans);margin:16px 0 0;letter-spacing:.02em}
+header .burst{position:absolute;right:20px;top:20px;width:108px;height:108px;transform:rotate(-12deg)}
+header .burst span{font:900 16px/1.2 var(--sans)}
+section{margin-top:40px;padding-top:26px;border-top:var(--b) solid var(--ink)}
+section[hidden]{display:none}
+h2{font:900 clamp(26px,6.5vw,34px)/1.15 var(--sans);margin:14px 0 18px;letter-spacing:.02em}
+h3{font:900 16px/1.4 var(--sans);margin:24px 0 10px}
+.pill{display:inline-block;border:var(--b) solid var(--ink);border-radius:999px;padding:2px 14px;font:700 13px/1.6 var(--mono);letter-spacing:.04em;background:var(--paper);white-space:nowrap}
+.sec-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+label{display:block;font:700 13px/1.4 var(--sans);margin-bottom:6px}
+input,select{font:16px var(--sans);color:var(--ink);background:var(--paper);border:var(--b) solid var(--ink);border-radius:12px;padding:10px 12px;width:100%;appearance:none;-webkit-appearance:none}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);background-position:calc(100% - 20px) 52%,calc(100% - 14px) 52%;background-size:6px 6px;background-repeat:no-repeat;padding-right:34px}
+input:focus,select:focus{outline:none;box-shadow:3px 3px 0 var(--ink);background-color:#fffde0}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px 12px}
+.span2{grid-column:span 2}
+@media (min-width:600px){.grid{grid-template-columns:repeat(4,1fr)}}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:var(--b) solid var(--ink);background:var(--paper);color:var(--ink);border-radius:999px;padding:4px 14px;font:700 14px var(--sans);cursor:pointer;transition:transform .08s,box-shadow .08s}
+button.chip:hover{box-shadow:2px 2px 0 var(--ink);transform:translate(-1px,-1px)}
+.chip.on{background:var(--yellow);box-shadow:2px 2px 0 var(--ink)}
+.chip.ok{cursor:default;font:700 12px/1.6 var(--mono);padding:1px 12px;background:var(--yellow)}
+.chip.no{cursor:default;font:12px/1.6 var(--mono);padding:1px 12px;border-style:dashed;color:var(--muted);border-color:var(--muted);text-decoration:line-through}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button{font-family:var(--sans);-webkit-tap-highlight-color:transparent}
+.btn,button.main,button.ghost,button.mini{border:var(--b) solid var(--ink);color:var(--ink);cursor:pointer;transition:transform .08s,box-shadow .08s}
+button.main{background:var(--yellow);border-radius:999px;padding:13px 30px;font:900 17px var(--sans);letter-spacing:.06em;box-shadow:4px 4px 0 var(--ink)}
+button.ghost{background:var(--paper);border-radius:999px;padding:6px 16px;font:700 14px var(--sans);box-shadow:3px 3px 0 var(--ink)}
+button.mini{background:var(--paper);border-radius:999px;padding:1px 12px;font:700 13px/1.6 var(--sans);box-shadow:2px 2px 0 var(--ink);flex:none}
+button.main:hover,button.ghost:hover,button.mini:hover{background:var(--yellow);transform:translate(-1px,-1px)}
+button.main:hover{box-shadow:5px 5px 0 var(--ink)}
+button.ghost:hover{box-shadow:4px 4px 0 var(--ink)}
+button.mini:hover{box-shadow:3px 3px 0 var(--ink)}
+button.main:active,button.ghost:active,button.mini:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
+.hint{font:13px/1.6 var(--sans);color:var(--muted)}
+.note{border:var(--b) solid var(--ink);border-radius:14px;padding:12px 16px;font-size:14px;margin:20px 0 0;box-shadow:3px 3px 0 var(--ink)}
+.note.warn{background:var(--yellow)}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.num{border:var(--b) solid var(--ink);border-radius:14px;padding:12px 12px 10px}
+.num b{display:block;font:700 clamp(22px,6.5vw,34px)/1.1 var(--mono)}
+.num span{font:700 12px var(--sans)}
+.num.hl{background:var(--yellow);box-shadow:4px 4px 0 var(--ink)}
+.macro{font:15px/1.7 var(--sans);margin:18px 0 0}
+.macro b{font-family:var(--mono)}
+.tabs{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:2px 4px 8px 0}
+.tab{border:var(--b) solid var(--ink);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 0;font:700 13px var(--sans);cursor:pointer;min-width:0}
+.tab.today{background:var(--yellow)}
+.tab.on{background:var(--ink);color:var(--paper);box-shadow:2px 2px 0 #888}
+.daybar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:16px 0 6px}
+.daysum{font:700 14px/1.6 var(--mono)}
+.meal{padding:30px 0 4px}
+.meal + .meal{border-top:var(--b) dashed var(--ink)}
+.meal-head{display:flex;align-items:center;gap:22px}
+.meal.alt .meal-head{flex-direction:row-reverse}
+.meal-title{flex:1;min-width:0}
+.art{position:relative;width:112px;height:112px;flex:none}
+.art svg.draw{width:100%;height:100%;fill:none;stroke:var(--ink);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.art .burst{position:absolute;width:68px;height:68px;right:-16px;top:-18px;transform:rotate(10deg)}
+.meal.alt .art .burst{right:auto;left:-16px;transform:rotate(-10deg)}
+.burst{display:grid;place-items:center}
+.burst svg{position:absolute;inset:0;width:100%;height:100%}
+.burst polygon{fill:var(--yellow);stroke:var(--ink);stroke-width:2;stroke-linejoin:round}
+.burst span{position:relative;font:700 12px/1.15 var(--mono);text-align:center;padding:0 8px}
+.dish{font:900 clamp(20px,5vw,26px)/1.3 var(--sans);margin:10px 0 0;letter-spacing:.02em}
+.items{margin-top:16px;border-top:var(--b) solid var(--ink)}
+.item{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:9px 0;border-bottom:1.5px dotted var(--ink);font:15px/1.5 var(--sans)}
+.item:last-child{border-bottom:0}
+.item .qty{color:var(--muted);font-size:13px;margin-left:6px;white-space:nowrap}
+.item .kc{font:700 13px var(--mono);white-space:nowrap}
+.tag{white-space:nowrap;font:700 11px/1.5 var(--sans);border:1.5px solid var(--ink);border-radius:999px;padding:0 7px;margin-left:6px;vertical-align:1px;background:var(--yellow)}
+.shop-cat{margin-top:22px}
+.shop-cat .pill{margin-bottom:6px}
+.shop-line{display:flex;justify-content:space-between;gap:10px;border-bottom:1.5px dotted var(--ink);padding:8px 0;font-size:15px}
+.shop-line .hint{font:700 13px var(--mono);color:var(--ink);white-space:nowrap}
+.total{font:700 15px/1.7 var(--sans);margin:22px 0 0;padding:12px 16px;border:var(--b) solid var(--ink);border-radius:14px;background:var(--yellow);box-shadow:3px 3px 0 var(--ink)}
+details summary{cursor:pointer;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details[open] .fold::after{content:"收起 ↑"}
+.fold::after{content:"展开 ↓"}
+form{margin-top:4px}
+.go{margin-top:30px}
+footer{margin-top:48px;padding-top:18px;padding-bottom:44px;border-top:var(--b) solid var(--ink);font:12px/1.7 var(--sans);color:var(--muted)}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 20px;border-radius:999px;font:700 14px var(--sans);opacity:0;transition:.2s;pointer-events:none}
+#toast.show{opacity:1}
+@media (max-width:520px){
+  .art{width:86px;height:86px}.meal-head{gap:16px}
+  .art .burst{width:58px;height:58px;right:-12px;top:-16px}.meal.alt .art .burst{left:-12px}
+  .art .burst span{font-size:10px;padding:0 6px}
+  .item{font-size:14px;gap:8px}
+  .tab{font-size:12px}
+}
+</style>
+</head>
+<body>
+<header>
+  <span class="pill">每日饭量计划</span>
+  <h1 style="margin-top:14px">糊弄一顿<br>是一顿</h1>
+  <div class="burst" id="hdrBurst"><span>吃了吗</span></div>
+</header>
+<main>
+
+<section id="setupCard">
+  <details id="setupDetails" open>
+    <summary><div class="sec-top"><span class="pill">01</span><span class="pill fold"></span></div><h2>基本信息</h2></summary>
+    <form id="setup">
+      <div class="grid">
+        <div><label>性别</label><select name="sex"><option value="f">女</option><option value="m">男</option></select></div>
+        <div><label>年龄</label><input name="age" type="number" min="14" max="90" required></div>
+        <div><label>身高 CM</label><input name="height" type="number" min="120" max="220" required></div>
+        <div><label>体重 KG</label><input name="weight" type="number" step="0.1" min="25" max="200" required></div>
+        <div class="span2"><label>活动量</label><select name="activity">
+          <option value="1">基本坐着/躺着</option><option value="2">每天会走走路</option><option value="3">每周运动3次以上</option></select></div>
+        <div><label>每天预算 円</label><input name="budget" type="number" min="300" max="10000" step="50" required></div>
+        <div><label>做饭精力</label><select name="effort">
+          <option value="0">只想开袋即食</option><option value="1">微波炉+烧水壶</option><option value="2">能用一个锅煮</option></select></div>
+      </div>
+      <h3>过敏原</h3>
+      <div class="chips" id="alChips"></div>
+      <h3>不爱吃的</h3>
+      <div class="chips" id="dlChips"></div>
+      <div style="margin-top:12px"><label>其他不吃的</label><input name="custom" placeholder="用空格隔开，例如：香菜 黄瓜"></div>
+      <div class="go"><button class="main" type="button" id="goBtn">排餐单 →</button></div>
+    </form>
+  </details>
+</section>
+
+<section id="targetsCard" hidden></section>
+
+<section id="planCard" hidden>
+  <div class="sec-top"><span class="pill">03</span>
+    <div class="row" style="gap:6px"><button class="ghost" data-act="regenDay">重排这天</button><button class="ghost" data-act="regenWeek">重排整周</button></div></div>
+  <h2>这周吃什么</h2>
+  <div id="plan"></div>
+</section>
+
+<section id="shopCard" hidden>
+  <div class="sec-top"><span class="pill">04</span><button class="ghost" id="copyShop">复制清单</button></div>
+  <h2>一周购物清单</h2>
+  <div id="shop"></div>
+</section>
+
+</main>
+<footer>
+  数值和价格都是大致估算，仅供参考。有严重过敏请看配料表。
+  <button class="mini" id="resetAll" style="margin-left:6px">清空数据</button>
+</footer>
+<div id="toast"></div>
+
+<script>
+/* ========== 食物库（每份的营养与估价；价格按日本超市/便利店大致价格，单位：日元） ========== */
+const FOODS=[
+// 蛋白质
+{id:'egg',name:'鸡蛋',cat:'protein',amt:2,unit:'个',g:100,kcal:143,p:12.2,c:0.4,f:10.2,price:60,effort:1,al:['egg'],dl:['鸡蛋'],nu:['B12','维A'],m:'bld'},
+{id:'cvegg',name:'溏心蛋',cat:'protein',amt:1,unit:'个',g:55,kcal:75,p:6.5,c:1,f:5,price:100,effort:0,cv:1,al:['egg'],dl:['鸡蛋'],nu:['B12'],m:'blds'},
+{id:'saladchicken',name:'即食鸡胸',cat:'protein',amt:1,unit:'包',g:110,kcal:120,p:26,c:1,f:1.5,price:250,effort:0,cv:1,al:[],dl:['鸡肉'],nu:[],m:'bld'},
+{id:'chickthigh',name:'鸡腿肉',cat:'protein',amt:150,unit:'g',g:150,kcal:285,p:25,c:0,f:21,price:180,effort:2,al:[],dl:['鸡肉'],nu:['锌'],m:'ld'},
+{id:'porkkoma',name:'猪肉碎片',cat:'protein',amt:100,unit:'g',g:100,kcal:220,p:18,c:0.2,f:16,price:150,effort:2,al:[],dl:['猪肉'],nu:['锌'],m:'ld'},
+{id:'gyudon',name:'冷冻牛肉盖饭料',cat:'protein',amt:1,unit:'袋',g:120,kcal:166,p:7.5,c:7,f:12,price:280,effort:1,al:['wheat','soy'],dl:['牛肉'],nu:['锌'],m:'ld'},
+{id:'natto',name:'纳豆',cat:'protein',amt:1,unit:'盒',g:45,kcal:90,p:7.4,c:5.4,f:4.5,price:35,effort:0,al:['soy'],dl:['纳豆','豆制品'],nu:['铁','纤维'],m:'bld'},
+{id:'tofu',name:'老豆腐',cat:'protein',amt:200,unit:'g',g:200,kcal:146,p:14,c:3,f:9,price:60,effort:0,al:['soy'],dl:['豆制品'],nu:['钙','铁'],m:'ld'},
+{id:'atsuage',name:'厚炸豆腐',cat:'protein',amt:1,unit:'块',g:150,kcal:215,p:16,c:1,f:17,price:90,effort:1,al:['soy'],dl:['豆制品'],nu:['钙','铁'],m:'ld'},
+{id:'edamame',name:'冷冻毛豆',cat:'protein',amt:100,unit:'g',g:100,kcal:125,p:11.7,c:9,f:6,price:80,effort:1,al:['soy'],dl:['豆制品'],nu:['纤维','铁'],m:'lds'},
+{id:'fishsausage',name:'鱼肉肠',cat:'protein',amt:2,unit:'根',g:140,kcal:220,p:15,c:18,f:10,price:100,effort:0,cv:1,al:['fish'],dl:['鱼'],nu:['钙'],m:'blds'},
+{id:'saba',name:'青花鱼罐头',cat:'protein',amt:1,unit:'罐',g:150,kcal:260,p:31,c:0,f:16,price:200,effort:0,al:['fish'],dl:['鱼'],nu:['钙','B12','维D'],m:'ld',maxM:1.5},
+{id:'tuna',name:'金枪鱼罐头',cat:'protein',amt:1,unit:'罐',g:70,kcal:185,p:12.5,c:0,f:15,price:150,effort:0,al:['fish'],dl:['鱼'],nu:['B12'],m:'ld'},
+{id:'salmon',name:'盐烤三文鱼',cat:'protein',amt:1,unit:'块',g:70,kcal:140,p:16,c:0,f:8,price:280,effort:0,cv:1,al:['fish'],dl:['鱼'],nu:['B12','维D'],m:'ld'},
+{id:'kanikama',name:'蟹柳',cat:'protein',amt:1,unit:'包',g:75,kcal:70,p:9,c:7,f:0.4,price:120,effort:0,cv:1,al:['fish','shellfish'],dl:['鱼','虾/海鲜'],nu:[],m:'lds'},
+{id:'shrimp',name:'冷冻虾仁',cat:'protein',amt:100,unit:'g',g:100,kcal:85,p:19,c:0,f:1,price:200,effort:2,al:['shellfish'],dl:['虾/海鲜'],nu:['锌'],m:'ld'},
+// 主食
+{id:'packrice',name:'盒装米饭',cat:'staple',amt:1,unit:'盒',g:200,kcal:300,p:4.4,c:68,f:0.6,price:150,effort:1,al:[],dl:[],nu:[],m:'ld',maxM:2},
+{id:'rice',name:'米饭（自己煮，熟）',cat:'staple',amt:200,unit:'g',g:200,kcal:312,p:5,c:74,f:0.6,price:70,effort:1,al:[],dl:[],nu:[],m:'ld',raw:0.43,maxM:2},
+{id:'onigiri',name:'饭团（梅干/昆布）',cat:'staple',amt:1,unit:'个',g:110,kcal:180,p:3.5,c:39,f:0.8,price:150,effort:0,cv:1,al:['soy','wheat'],dl:[],nu:[],m:'bld',maxM:2},
+{id:'onigirisake',name:'饭团（鲑鱼）',cat:'staple',amt:1,unit:'个',g:110,kcal:185,p:6,c:37,f:1.5,price:170,effort:0,cv:1,al:['fish'],dl:['鱼'],nu:[],m:'bld',maxM:2},
+{id:'bread',name:'吐司',cat:'staple',amt:1,unit:'片',g:60,kcal:158,p:5.4,c:28,f:2.6,price:30,effort:0,al:['wheat'],dl:[],nu:[],m:'bld',maxM:3},
+{id:'oats',name:'燕麦片',cat:'staple',amt:40,unit:'g',g:40,kcal:152,p:5.5,c:28,f:2.3,price:30,effort:1,al:['wheat'],dl:['燕麦'],nu:['纤维','铁'],m:'b'},
+{id:'granola',name:'格兰诺拉',cat:'staple',amt:50,unit:'g',g:50,kcal:220,p:3.7,c:35,f:7.6,price:80,effort:0,al:['wheat'],dl:['燕麦'],nu:['铁','纤维'],m:'b'},
+{id:'udon',name:'冷冻乌冬',cat:'staple',amt:1,unit:'份',g:200,kcal:190,p:5,c:41,f:0.8,price:50,effort:1,al:['wheat'],dl:['乌冬'],nu:[],m:'ld',maxM:2},
+{id:'soba',name:'冷冻荞麦面',cat:'staple',amt:1,unit:'份',g:180,kcal:230,p:9,c:45,f:1.5,price:70,effort:1,al:['buckwheat','wheat'],dl:[],nu:['纤维'],m:'ld',maxM:2},
+{id:'pasta',name:'意面',cat:'staple',amt:100,unit:'g',g:100,kcal:347,p:12,c:73,f:1.5,price:30,effort:2,al:['wheat'],dl:[],nu:[],m:'ld',maxM:1.5},
+{id:'chahan',name:'冷冻炒饭',cat:'staple',amt:225,unit:'g',g:225,kcal:390,p:9,c:62,f:11,price:200,effort:1,al:['egg','wheat','soy'],dl:['猪肉'],nu:[],m:'ld',maxM:2},
+{id:'gyoza',name:'冷冻煎饺',cat:'staple',amt:6,unit:'个',g:138,kcal:270,p:9,c:29,f:13,price:120,effort:2,al:['wheat','soy','sesame'],dl:['猪肉'],nu:[],m:'ld',maxM:2},
+{id:'yakiimo',name:'烤红薯',cat:'staple',amt:1,unit:'个',g:200,kcal:300,p:2.8,c:72,f:0.4,price:200,effort:0,al:[],dl:['红薯'],nu:['纤维','维C'],m:'bld',maxM:1.5},
+{id:'satsumaimo',name:'红薯（生）',cat:'staple',amt:1,unit:'个',g:200,kcal:265,p:2.4,c:63,f:0.4,price:100,effort:1,al:[],dl:['红薯'],nu:['纤维','维C'],m:'bld',maxM:1.5},
+// 蔬菜
+{id:'broccoli',name:'冷冻西兰花',cat:'veg',amt:150,unit:'g',g:150,kcal:50,p:6,c:7,f:0.6,price:100,effort:1,al:[],dl:['西兰花'],nu:['维C','纤维'],m:'ld'},
+{id:'cutveg',name:'切好的沙拉菜',cat:'veg',amt:1,unit:'袋',g:130,kcal:30,p:1.5,c:6,f:0.2,price:100,effort:0,cv:1,al:[],dl:[],nu:['维C'],m:'ld'},
+{id:'spinach',name:'冷冻菠菜',cat:'veg',amt:100,unit:'g',g:100,kcal:25,p:2.5,c:3,f:0.5,price:60,effort:1,al:[],dl:['菠菜'],nu:['铁','维A'],m:'ld'},
+{id:'komatsuna',name:'冷冻小松菜',cat:'veg',amt:100,unit:'g',g:100,kcal:14,p:1.5,c:2.4,f:0.2,price:60,effort:1,al:[],dl:[],nu:['钙','铁','维A','维C'],m:'ld'},
+{id:'moyashi',name:'豆芽',cat:'veg',amt:1,unit:'袋',g:200,kcal:30,p:3.4,c:5,f:0.2,price:40,effort:1,al:[],dl:['豆芽'],nu:['维C','纤维'],m:'ld'},
+{id:'minitomato',name:'小番茄',cat:'veg',amt:10,unit:'个',g:150,kcal:45,p:1.6,c:11,f:0.2,price:200,effort:0,al:[],dl:['番茄'],nu:['维C','维A'],m:'lds'},
+{id:'cucumber',name:'黄瓜',cat:'veg',amt:1,unit:'根',g:100,kcal:14,p:1,c:3,f:0.1,price:60,effort:0,al:[],dl:['黄瓜'],nu:[],m:'ld',maxM:2},
+{id:'carrot',name:'胡萝卜',cat:'veg',amt:1,unit:'根',g:150,kcal:50,p:1,c:13,f:0.2,price:50,effort:0,al:[],dl:['胡萝卜'],nu:['维A','纤维'],m:'ld'},
+{id:'mixveg',name:'冷冻什锦蔬菜',cat:'veg',amt:100,unit:'g',g:100,kcal:70,p:3,c:14,f:0.6,price:60,effort:1,al:[],dl:['胡萝卜'],nu:['维A','纤维'],m:'ld'},
+{id:'kabocha',name:'冷冻南瓜',cat:'veg',amt:150,unit:'g',g:150,kcal:125,p:2.8,c:30,f:0.4,price:120,effort:1,al:[],dl:['南瓜'],nu:['维A','维C','纤维'],m:'ld'},
+// 水果
+{id:'banana',name:'香蕉',cat:'fruit',amt:1,unit:'根',g:120,kcal:100,p:1.3,c:26,f:0.2,price:40,effort:0,cv:1,al:[],dl:['香蕉'],nu:[],m:'bs'},
+{id:'mikan',name:'橘子',cat:'fruit',amt:2,unit:'个',g:150,kcal:70,p:1,c:18,f:0.2,price:80,effort:0,al:[],dl:[],nu:['维C'],m:'bs'},
+{id:'apple',name:'苹果',cat:'fruit',amt:1,unit:'个',g:250,kcal:135,p:0.3,c:37,f:0.5,price:150,effort:0,al:[],dl:[],nu:['纤维'],m:'bs'},
+{id:'kiwi',name:'猕猴桃',cat:'fruit',amt:1,unit:'个',g:100,kcal:53,p:1,c:13.5,f:0.2,price:80,effort:0,al:[],dl:[],nu:['维C','纤维'],m:'bs'},
+{id:'kuri',name:'剥壳甘栗',cat:'fruit',amt:1,unit:'袋',g:50,kcal:110,p:2.5,c:24,f:0.5,price:150,effort:0,cv:1,al:['treenut'],dl:['坚果'],nu:['纤维'],m:'bs'},
+{id:'prune',name:'西梅干',cat:'fruit',amt:5,unit:'个',g:50,kcal:106,p:1.2,c:31,f:0.1,price:80,effort:0,al:[],dl:[],nu:['纤维'],m:'bs'},
+{id:'vegjuice',name:'蔬菜汁',cat:'fruit',amt:200,unit:'ml',g:200,kcal:70,p:1,c:16,f:0,price:90,effort:0,cv:1,al:[],dl:[],nu:['维A','维C'],m:'bs'},
+// 高能量零食
+{id:'nuts',name:'混合坚果',cat:'fat',amt:30,unit:'g',g:30,kcal:185,p:5.6,c:5.5,f:16,price:60,effort:0,al:['treenut'],dl:['坚果'],nu:[],m:'s'},
+{id:'almond',name:'杏仁',cat:'fat',amt:25,unit:'g',g:25,kcal:150,p:5,c:5,f:13,price:50,effort:0,cv:1,al:['treenut'],dl:['坚果'],nu:[],m:'s'},
+{id:'peanut',name:'花生',cat:'fat',amt:30,unit:'g',g:30,kcal:180,p:7.7,c:5,f:16,price:30,effort:0,al:['peanut'],dl:['花生'],nu:[],m:'s'},
+{id:'pb',name:'花生酱',cat:'fat',amt:2,unit:'勺',g:32,kcal:190,p:8,c:6,f:16,price:40,effort:0,al:['peanut'],dl:['花生'],nu:[],m:'s'},
+{id:'cheese',name:'奶酪',cat:'fat',amt:2,unit:'块',g:36,kcal:120,p:8,c:0.5,f:10,price:80,effort:0,al:['milk'],dl:['奶酪'],nu:['钙','B12'],m:'s'},
+{id:'proteinbar',name:'蛋白棒',cat:'fat',amt:1,unit:'根',g:40,kcal:185,p:15,c:16,f:8,price:150,effort:0,cv:1,al:['milk','soy'],dl:['蛋白粉'],nu:[],m:'s'},
+{id:'caloriemate',name:'卡路里伴侣',cat:'fat',amt:2,unit:'根',g:40,kcal:200,p:4.3,c:21,f:11,price:120,effort:0,cv:1,al:['wheat','egg','milk','soy'],dl:[],nu:['钙','铁','维A','B12'],m:'bs'},
+// 奶 / 豆 / 冲饮
+{id:'milk',name:'牛奶',cat:'drink',amt:200,unit:'ml',g:200,kcal:134,p:6.6,c:9.6,f:7.6,price:50,effort:0,al:['milk'],dl:['牛奶'],nu:['钙','B12'],m:'bs'},
+{id:'savas',name:'蛋白牛奶',cat:'drink',amt:1,unit:'瓶',g:200,kcal:102,p:15,c:10.6,f:0,price:160,effort:0,cv:1,al:['milk'],dl:['蛋白粉'],nu:['钙'],m:'bs'},
+{id:'oikos',name:'希腊酸奶',cat:'drink',amt:1,unit:'杯',g:113,kcal:92,p:10,c:11,f:0,price:160,effort:0,cv:1,al:['milk'],dl:['酸奶'],nu:['钙'],m:'bs'},
+{id:'yogurt',name:'原味酸奶',cat:'drink',amt:150,unit:'g',g:150,kcal:93,p:5.4,c:7,f:4.5,price:75,effort:0,al:['milk'],dl:['酸奶'],nu:['钙','B12'],m:'bs'},
+{id:'soymilk',name:'豆浆',cat:'drink',amt:200,unit:'ml',g:200,kcal:116,p:7.2,c:9,f:7.3,price:55,effort:0,al:['soy'],dl:['豆制品'],nu:[],m:'bs'},
+{id:'injelly',name:'能量果冻',cat:'drink',amt:1,unit:'袋',g:180,kcal:180,p:0,c:45,f:0,price:200,effort:0,cv:1,al:[],dl:[],nu:['维C'],m:'bs'},
+{id:'whey',name:'乳清蛋白粉（可选）',cat:'drink',amt:1,unit:'勺',g:21,kcal:83,p:15,c:2.5,f:1.3,price:70,effort:0,al:['milk'],dl:['蛋白粉'],nu:[],m:'bs'},
+// 国内常见（价格同样按日元估算）
+{id:'beef',name:'卤牛肉（熟食）',cat:'protein',amt:100,unit:'g',g:100,kcal:190,p:30,c:3,f:7,price:450,effort:0,al:[],dl:['牛肉'],nu:['铁','B12','锌'],m:'ld'},
+{id:'pork',name:'猪里脊',cat:'protein',amt:100,unit:'g',g:100,kcal:143,p:20,c:1,f:6,price:200,effort:2,al:[],dl:['猪肉'],nu:['锌'],m:'ld'},
+{id:'sardine',name:'沙丁鱼罐头',cat:'protein',amt:1,unit:'罐',g:100,kcal:208,p:24.6,c:0,f:11.5,price:200,effort:0,al:['fish'],dl:['鱼'],nu:['钙','B12','维D'],m:'ld',maxM:1.5},
+{id:'tunawater',name:'水浸金枪鱼罐头',cat:'protein',amt:1,unit:'罐',g:70,kcal:50,p:11.5,c:0,f:0.5,price:130,effort:0,al:['fish'],dl:['鱼'],nu:['B12'],m:'ld'},
+{id:'noodle',name:'挂面（干）',cat:'staple',amt:100,unit:'g',g:100,kcal:350,p:11,c:72,f:1.3,price:40,effort:2,al:['wheat'],dl:[],nu:[],m:'ld',maxM:2},
+{id:'mantou',name:'馒头',cat:'staple',amt:1,unit:'个',g:100,kcal:223,p:7,c:47,f:1.1,price:80,effort:0,al:['wheat'],dl:[],nu:[],m:'bld'},
+{id:'wwbread',name:'全麦面包',cat:'staple',amt:2,unit:'片',g:70,kcal:175,p:8.5,c:29,f:2.4,price:80,effort:0,al:['wheat'],dl:[],nu:['纤维'],m:'bld'},
+{id:'potato',name:'土豆',cat:'staple',amt:1,unit:'个',g:200,kcal:154,p:4,c:35,f:0.2,price:50,effort:1,al:[],dl:['土豆'],nu:['维C'],m:'ld',maxM:2},
+{id:'corn',name:'甜玉米',cat:'staple',amt:1,unit:'根',g:150,kcal:168,p:4.8,c:33,f:1.8,price:150,effort:1,al:[],dl:['玉米'],nu:['纤维'],m:'bld',maxM:2},
+{id:'dumpling',name:'速冻水饺（猪肉白菜）',cat:'staple',amt:10,unit:'个',g:200,kcal:400,p:16,c:50,f:15,price:200,effort:2,al:['wheat'],dl:['猪肉'],nu:[],m:'ld',maxM:2},
+{id:'greens',name:'小青菜/油菜',cat:'veg',amt:250,unit:'g',g:250,kcal:35,p:3.5,c:5,f:0.5,price:150,effort:2,al:[],dl:[],nu:['钙','维C','维A'],m:'ld'},
+{id:'freshspinach',name:'菠菜',cat:'veg',amt:200,unit:'g',g:200,kcal:46,p:5.8,c:7,f:0.8,price:150,effort:2,al:[],dl:['菠菜'],nu:['铁','维A'],m:'ld'},
+{id:'tomato',name:'番茄',cat:'veg',amt:1,unit:'个',g:200,kcal:36,p:1.8,c:7.8,f:0.4,price:100,effort:0,al:[],dl:['番茄'],nu:['维C'],m:'ld'},
+{id:'lettuce',name:'生菜',cat:'veg',amt:200,unit:'g',g:200,kcal:30,p:2.7,c:4,f:0.4,price:150,effort:0,al:[],dl:[],nu:['维A'],m:'ld'},
+{id:'orange',name:'橙子',cat:'fruit',amt:1,unit:'个',g:200,kcal:94,p:1.8,c:23,f:0.3,price:120,effort:0,al:[],dl:[],nu:['维C'],m:'bs'},
+{id:'raisin',name:'葡萄干',cat:'fruit',amt:30,unit:'g',g:30,kcal:90,p:0.9,c:24,f:0.1,price:40,effort:0,al:[],dl:[],nu:[],m:'bs'},
+{id:'pumpkinseed',name:'南瓜子仁',cat:'fat',amt:30,unit:'g',g:30,kcal:170,p:8.8,c:4,f:14.6,price:80,effort:0,al:[],dl:[],nu:['铁','锌'],m:'s'},
+{id:'sunflower',name:'葵花籽仁',cat:'fat',amt:30,unit:'g',g:30,kcal:175,p:6,c:6,f:15,price:60,effort:0,al:[],dl:[],nu:[],m:'s'},
+{id:'dailynuts',name:'每日坚果',cat:'fat',amt:1,unit:'小包',g:30,kcal:180,p:5,c:6,f:15.5,price:100,effort:0,al:['treenut'],dl:['坚果'],nu:[],m:'s'},
+{id:'sesame',name:'黑芝麻糊',cat:'drink',amt:1,unit:'袋',g:30,kcal:130,p:3,c:20,f:5,price:60,effort:1,al:['sesame'],dl:['芝麻'],nu:['铁','钙'],m:'bs'},
+{id:'plainsoy',name:'无糖豆浆',cat:'drink',amt:300,unit:'ml',g:300,kcal:99,p:9,c:4,f:5,price:80,effort:0,al:['soy'],dl:['豆制品'],nu:[],m:'bs'},
+];
+
+const ALLERGENS=[['milk','牛奶/乳制品'],['egg','鸡蛋'],['peanut','花生'],['treenut','坚果'],['soy','大豆'],['wheat','小麦/麸质'],['fish','鱼类'],['shellfish','虾蟹贝类'],['sesame','芝麻'],['buckwheat','荞麦']];
+const DISLIKES=['鸡肉','猪肉','牛肉','鱼','虾/海鲜','鸡蛋','牛奶','酸奶','奶酪','豆制品','纳豆','燕麦','乌冬','红薯','土豆','玉米','南瓜','菠菜','胡萝卜','西兰花','番茄','黄瓜','豆芽','香蕉','花生','坚果','芝麻','蛋白粉'];
+const MEALS=[
+  {k:'b',n:'早餐',slots:['staple','protein','drink']},
+  {k:'s1',n:'加餐',slots:['fruit','fat']},
+  {k:'l',n:'午餐',slots:['staple','protein','veg']},
+  {k:'d',n:'晚餐',slots:['staple','protein','veg']},
+  {k:'s2',n:'睡前加餐',slots:['drink']},
+];
+const CAT_N={protein:'蛋白质',staple:'主食',veg:'蔬菜',fruit:'水果',fat:'高能量零食',drink:'奶 / 豆 / 冲饮'};
+const ESS=['钙','铁','维C','纤维','维A','B12'];
+const MAXM={staple:2.5,protein:2,drink:2,fat:2,veg:1.5,fruit:2};
+const MINM={staple:0.5,protein:1,drink:1,fat:1,veg:1,fruit:1};
+const WD=['周一','周二','周三','周四','周五','周六','周日'];
+const KEY='lanren-zengzhong-v1';
+const FMAP=Object.fromEntries(FOODS.map(f=>[f.id,f]));
+const F=id=>FMAP[id];
+
+/* ========== 工具 ========== */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const rid=()=>Math.random().toString(36).slice(2,10);
+const pad=n=>String(n).padStart(2,'0');
+const ds=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const todayStr=()=>ds(new Date());
+const todayIdx=()=>(new Date().getDay()+6)%7;
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>el.classList.remove('show'),1800);}
+
+const DEFAULT={sex:'f',age:25,height:163,weight:45,activity:'1',budget:1200,effort:'1',allergens:[],dislikes:['鸡肉'],custom:''};
+let S={settings:null,targets:null,plan:null};
+try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);S={settings:o.settings||null,targets:o.targets||null,plan:o.plan||null};}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+let curTab=todayIdx();
+
+/* ========== 目标计算 ========== */
+function calcTargets(s){
+  const w=+s.weight,h=+s.height,a=+s.age;
+  const bmr=10*w+6.25*h-5*a+(s.sex==='m'?5:-161);
+  const tdee=bmr*({1:1.2,2:1.375,3:1.55}[s.activity]||1.2);
+  const kcal=tdee+300;
+  const p=w*1.6;
+  const fat=kcal*0.28/9;
+  const r10=x=>Math.round(x/10)*10;
+  return {bmr:r10(bmr),tdee:r10(tdee),kcal:r10(kcal),p:Math.round(p),fat:Math.round(fat),carb:Math.round((kcal-p*4-fat*9)/4),bmi:w/((h/100)**2)};
+}
+const planKcal=()=>S.targets.kcal;
+
+/* ========== 排餐 ========== */
+function customTerms(st){return (st.custom||'').split(/[,，、;；\s]+/).map(x=>x.trim()).filter(Boolean);}
+function allowed(f){
+  const st=S.settings;
+  if(f.effort>+st.effort) return false;
+  if(f.al.some(a=>st.allergens.includes(a))) return false;
+  if(f.dl.some(d=>st.dislikes.includes(d))) return false;
+  if(customTerms(st).some(t=>f.name.includes(t))) return false;
+  return true;
+}
+const flagOf=meal=>meal[0]==='s'?'s':meal;
+function cands(cat,meal){const fl=flagOf(meal);return FOODS.filter(f=>f.cat===cat&&f.m.includes(fl)&&allowed(f));}
+const maxM=i=>F(i.id).maxM||MAXM[i.cat];
+function totals(items){
+  const t={kcal:0,p:0,c:0,f:0,cost:0,vegG:0,effort:0,nutr:new Set()};const seen=new Set();
+  for(const it of items){const f=F(it.id),m=it.mult;
+    t.kcal+=f.kcal*m;t.p+=f.p*m;t.c+=f.c*m;t.f+=f.f*m;t.cost+=f.price*m;
+    if(f.cat==='veg')t.vegG+=f.g*m;
+    if(!seen.has(f.id)){seen.add(f.id);t.effort+=f.effort;}
+    f.nu.forEach(n=>t.nutr.add(n));}
+  return t;
+}
+function addSnack(items,kind){
+  if(items.filter(i=>i.extra).length>=3) return false;
+  const used=new Set(items.map(i=>i.id));
+  let pool=FOODS.filter(f=>f.m.includes('s')&&allowed(f)&&!used.has(f.id));
+  if(kind==='protein') pool=pool.filter(f=>f.p>=8).sort((a,b)=>b.p/b.kcal-a.p/a.kcal);
+  else pool=pool.filter(f=>['fat','drink','fruit'].includes(f.cat)).sort((a,b)=>b.kcal/b.price-a.kcal/a.price);
+  if(!pool.length) return false;
+  const f=pool[Math.floor(Math.random()*Math.min(3,pool.length))];
+  items.push({uid:rid(),id:f.id,meal:kind==='protein'?'s2':'s1',cat:f.cat,mult:1,extra:true});
+  return true;
+}
+function fill(items){
+  items.forEach(i=>i.mult=1);
+  const goal=planKcal(),P=S.targets.p;
+  for(let k=0;k<40;k++){
+    const t=totals(items);
+    if(t.p<P*0.95){
+      const pr=items.filter(i=>F(i.id).p>=8&&i.mult+0.5<=maxM(i)&&t.kcal+F(i.id).kcal*0.5<=goal+250)
+        .sort((a,b)=>F(b.id).p/F(b.id).kcal-F(a.id).p/F(a.id).kcal);
+      if(pr.length){pr[0].mult+=0.5;continue;}
+      if(t.kcal<goal+100&&addSnack(items,'protein')) continue;
+    }
+    if(t.kcal<goal-100){
+      const st=items.filter(i=>i.cat==='staple'&&i.mult+0.5<=maxM(i)).sort((a,b)=>a.mult-b.mult);
+      if(st.length&&k%2===0){st[0].mult+=0.5;continue;}
+      if(addSnack(items,'energy')) continue;
+      if(st.length){st[0].mult+=0.5;continue;}
+      const o=items.filter(i=>['drink','fat','fruit','protein'].includes(i.cat)&&i.mult+0.5<=maxM(i));
+      if(o.length){o[0].mult+=0.5;continue;}
+      break;
+    }
+    if(t.kcal>goal+150){
+      const st=items.filter(i=>i.cat==='staple'&&i.mult-0.5>=MINM.staple).sort((a,b)=>b.mult-a.mult);
+      if(st.length){st[0].mult-=0.5;continue;}
+      const ex=items.filter(i=>i.extra);
+      if(ex.length){items.splice(items.indexOf(ex[ex.length-1]),1);continue;}
+      const big=items.filter(i=>i.mult>1).sort((a,b)=>F(b.id).kcal*b.mult-F(a.id).kcal*a.mult);
+      if(big.length){big[0].mult-=0.5;continue;}
+      break;
+    }
+    break;
+  }
+  return items;
+}
+function genDay(){
+  const items=[];
+  for(const m of MEALS) for(const cat of m.slots){
+    const c=cands(cat,m.k).filter(f=>cat==='staple'||!items.some(i=>i.id===f.id));
+    if(!c.length) continue;
+    const f=c[Math.floor(Math.random()*c.length)];
+    items.push({uid:rid(),id:f.id,meal:m.k,cat,mult:1,extra:false});
+  }
+  return fill(items);
+}
+function score(items,ctx){
+  const t=totals(items),goal=planKcal(),P=S.targets.p,budget=+S.settings.budget;
+  let s=Math.abs(t.kcal-goal)/goal*100;
+  s+=Math.max(0,P-t.p)*1.5;
+  s+=ESS.filter(n=>!t.nutr.has(n)).length*12;
+  if(t.vegG<300) s+=(300-t.vegG)/20;
+  if(t.cost>budget) s+=(t.cost/budget-1)*100;
+  s+=t.effort*0.8;
+  if(ctx){
+    items.forEach(i=>{if(ctx.weekSet.has(i.id)) s-=1.2;});
+    const nb=[ctx.prev,ctx.next].filter(Boolean);
+    items.forEach(i=>{nb.forEach(d=>{if(d.some(p=>p.id===i.id&&p.meal===i.meal&&i.cat!=='staple')) s+=2.5;});});
+  }
+  return s;
+}
+function bestDay(ctx,n){let best=null,bs=Infinity;for(let k=0;k<n;k++){const d=genDay(),s=score(d,ctx);if(s<bs){bs=s;best=d;}}return best;}
+function genWeek(){
+  const days=[],weekSet=new Set();
+  for(let d=0;d<7;d++){const best=bestDay({weekSet,prev:days[d-1]},160);best.forEach(i=>weekSet.add(i.id));days.push(best);}
+  return {id:rid(),days};
+}
+function regenDay(d){
+  const weekSet=new Set();S.plan.days.forEach((day,i)=>{if(i!==d)day.forEach(it=>weekSet.add(it.id));});
+  S.plan.days[d]=bestDay({weekSet,prev:S.plan.days[d-1],next:S.plan.days[d+1]},200);
+}
+
+/* ========== 展示 ========== */
+function qty(f,mult){
+  const a=f.amt*mult;
+  if(f.unit==='g'||f.unit==='ml') return Math.round(a/10)*10+f.unit;
+  const q=Math.round(a*2)/2;
+  return q+f.unit+'（约'+Math.round(f.g*mult/10)*10+'g）';
+}
+function renderChips(){
+  const st=S.settings||DEFAULT;
+  $('#alChips').innerHTML=ALLERGENS.map(([k,n])=>`<button type="button" class="chip${st.allergens.includes(k)?' on':''}" data-al="${k}">${n}</button>`).join('');
+  $('#dlChips').innerHTML=DISLIKES.map(n=>`<button type="button" class="chip${st.dislikes.includes(n)?' on':''}" data-dl="${n}">${n}</button>`).join('');
+}
+function fillForm(){
+  const st=S.settings||DEFAULT,f=$('#setup').elements;
+  ['sex','age','height','weight','activity','budget','effort','custom'].forEach(k=>{if(f[k])f[k].value=st[k]??DEFAULT[k];});
+  renderChips();
+}
+/* 线稿插图 + 星形标签 */
+const PLATE='<ellipse cx="60" cy="62" rx="52" ry="48"/><ellipse cx="60" cy="62" rx="40" ry="36"/><path d="M13 47l4 2M107 47l-4 2M19 90l4-3M101 90l-4-3M60 112v-4M60 12v4M30 22l3 3M90 22l-3 3"/>';
+const ART={
+  b:PLATE+'<path d="M36 52c4-12 22-15 31-7 10 2 14 14 8 22-6 10-24 12-34 6-8-5-9-13-5-21z"/><circle cx="53" cy="58" r="8"/><path d="M50 55c1-2 3-3 5-2"/><path d="M70 76c-2-8 4-13 10-11 6-4 14 2 12 9l-2 15H72z"/><path d="M76 80h12M77 86h10"/>',
+  s1:'<path d="M42 46c-14-6-28 8-24 26 3 16 14 26 24 22 4 2 8 2 12 0 10 4 21-6 24-22 4-18-10-32-24-26-4 2-8 2-12 0z"/><path d="M48 44c0-8 3-14 8-18"/><path d="M56 30c6-6 14-6 18-2-6 6-14 6-18 2z"/><path d="M30 64c0-6 3-10 7-12"/><path d="M68 102c16 2 32-10 38-26 2-4 7-4 6 1-5 22-26 35-45 31-4-1-3-6 1-6z"/><path d="M74 101c12-2 25-13 31-25"/>',
+  l:'<path d="M12 58h96c0 26-21 42-48 42S12 84 12 58z"/><path d="M40 100l2 8h36l2-8"/><path d="M16 58c2-8 8-12 14-10 2-8 12-12 18-6 4-8 16-8 20 0 6-6 16-2 18 6 6-2 12 2 14 10"/><path d="M34 52l3-1M52 47l3 1M70 49l3-1M86 52l3 1M44 54l2 1M78 55l2-1"/><path d="M28 40l74-28M33 46l72-24"/><path d="M30 74c8 6 52 6 60 0"/>',
+  d:PLATE+'<path d="M60 62c0-4 6-4 6 0 0 8-12 8-12 0 0-12 18-12 18 0 0 16-24 16-24 0 0-20 30-20 30 0 0 22-36 22-36 0"/><path d="M30 50c8 4 12-4 20 0M70 86c8-4 12 4 20 0M32 76c4 3 8-2 12 1"/><path d="M84 14l24 40M92 12l22 38"/><circle cx="44" cy="40" r="1.5"/><circle cx="80" cy="44" r="1.5"/><circle cx="40" cy="84" r="1.5"/>',
+  s2:'<path d="M38 22h40l-6 84H44z"/><path d="M40 44c6 4 12-4 19 0s12-4 18 0"/><path d="M50 60v4M62 74v4M54 90v4M66 56v3"/><path d="M104 32a13 13 0 1 1-13-15 10 10 0 0 0 13 15z"/><path d="M90 52l2 4 4 1-3 3 1 4-4-2-4 2 1-4-3-3 4-1z"/>'
+};
+function burstSVG(){const p=[],n=16;for(let i=0;i<n*2;i++){const r=i%2?39:50,a=Math.PI*i/n-Math.PI/2;p.push((50+r*Math.cos(a)).toFixed(1)+','+(50+r*Math.sin(a)).toFixed(1));}return `<svg viewBox="-2 -2 104 104" aria-hidden="true"><polygon points="${p.join(' ')}"/></svg>`;}
+const burst=t=>`<div class="burst">${burstSVG()}<span>${t}</span></div>`;
+const shortName=n=>n.replace(/（[^）]*）/g,'');
+
+function renderTargets(){
+  const T=S.targets,st=S.settings,el=$('#targetsCard');el.hidden=false;
+  let note='';
+  if(T.bmi<16.5) note=`<div class="note warn">BMI 约 ${T.bmi.toFixed(1)}，偏低得比较多。建议先找医生做个基础检查（比如甲状腺、肠胃吸收）。加量要<b>循序渐进</b>：前一两周先吃到维持量 ${T.tdee} kcal，适应了再往目标加。</div>`;
+  else if(T.bmi<18.5) note=`<div class="note">BMI 约 ${T.bmi.toFixed(1)}，属于偏瘦。胃口小的话，前一两周可以先吃到维持量，再慢慢加。</div>`;
+  else note=`<div class="note">BMI 约 ${T.bmi.toFixed(1)}。</div>`;
+  el.innerHTML=`<span class="pill">02</span><h2>每天要吃多少</h2>
+  <div class="nums">
+    <div class="num"><b>${T.bmr}</b><span>底线 KCAL</span></div>
+    <div class="num"><b>${T.tdee}</b><span>维持 KCAL</span></div>
+    <div class="num hl"><b>${T.kcal}</b><span>目标 KCAL</span></div>
+  </div>
+  <p class="macro">蛋白质 <b>${T.p}g</b> · 脂肪约 <b>${T.fat}g</b> · 碳水约 <b>${T.carb}g</b></p>
+  ${note}`;
+}
+function renderPlan(){
+  $('#planCard').hidden=false;
+  const d=curTab,items=S.plan.days[d],t=totals(items);
+  const ti=todayIdx();
+  let h=`<div class="tabs">${WD.map((w,i)=>`<button class="tab${i===ti?' today':''}${i===d?' on':''}" data-tab="${i}">${i===ti?'今天':w}</button>`).join('')}</div>`;
+  h+=`<div class="daybar"><div class="daysum">${Math.round(t.kcal)} KCAL · 蛋白质 ${Math.round(t.p)}G · ${Math.round(t.cost)} 円</div><div class="chips">${ESS.map(n=>`<span class="chip ${t.nutr.has(n)?'ok':'no'}">${n}</span>`).join('')}</div></div>`;
+  let idx=0;
+  for(const m of MEALS){
+    const list=items.filter(i=>i.meal===m.k);if(!list.length) continue;
+    const mk=list.reduce((a,i)=>a+F(i.id).kcal*i.mult,0);
+    const cost=list.reduce((a,i)=>a+F(i.id).price*i.mult,0);
+    const dish=list.map(i=>esc(shortName(F(i.id).name))).join(' + ');
+    h+=`<div class="meal${idx++%2?' alt':''}"><div class="meal-head">
+      <div class="art"><svg class="draw" viewBox="0 0 120 120" aria-hidden="true">${ART[m.k]}</svg>${burst(Math.round(mk)+'<br>KCAL')}</div>
+      <div class="meal-title"><span class="pill">${m.n} · 约 ${Math.round(cost)} 円</span><div class="dish">${dish}</div></div></div><div class="items">`;
+    for(const it of list){
+      const f=F(it.id);
+      h+=`<div class="item"><div>${esc(f.name)}<span class="qty">${qty(f,it.mult)}</span>${f.cv?'<span class="tag">便利店</span>':''}</div>
+        <span class="kc">${Math.round(f.kcal*it.mult)}</span><button class="mini" data-swap="${it.uid}">换</button></div>`;
+    }
+    h+=`</div></div>`;
+  }
+  $('#plan').innerHTML=h;
+}
+function shopData(){
+  const agg={};
+  S.plan.days.forEach(day=>day.forEach(it=>{agg[it.id]=(agg[it.id]||0)+it.mult;}));
+  const out={};
+  Object.entries(agg).forEach(([id,m])=>{const f=F(id);(out[f.cat]=out[f.cat]||[]).push({f,m});});
+  return out;
+}
+function renderShop(){
+  $('#shopCard').hidden=false;
+  const data=shopData();let total=0,h='';
+  for(const cat of Object.keys(CAT_N)){
+    if(!data[cat]) continue;
+    h+=`<div class="shop-cat"><span class="pill">${CAT_N[cat]}</span>`;
+    data[cat].sort((a,b)=>b.m-a.m).forEach(({f,m})=>{
+      total+=f.price*m;
+      const extra=f.raw?`（≈生米 ${Math.round(f.amt*m*f.raw/50)*50}g）`:'';
+      h+=`<div class="shop-line"><span>${esc(f.name)} ${qty(f,m)}${extra}</span><span class="hint">${Math.round(f.price*m)} 円</span></div>`;
+    });
+    h+=`</div>`;
+  }
+  h+=`<p class="total">一周约 <b>${Math.round(total)} 円</b>，平均每天 ${Math.round(total/7)} 円（预算 ${S.settings.budget} 円/天）。调料另算。</p>`;
+  $('#shop').innerHTML=h;
+}
+function renderAll(){
+  fillForm();
+  if(!S.settings||!S.plan) return;
+  $('#setupDetails').open=false;
+  renderTargets();renderPlan();renderShop();
+}
+
+/* ========== 交互 ========== */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b) return;
+  if(b.dataset.al||b.dataset.dl){b.classList.toggle('on');return;}
+  if(b.dataset.tab){curTab=+b.dataset.tab;renderPlan();return;}
+  if(b.dataset.act==='regenWeek'){S.plan=genWeek();save();renderPlan();renderShop();toast('整周重新排好了');return;}
+  if(b.dataset.act==='regenDay'){regenDay(curTab);save();renderPlan();renderShop();toast('这一天重新排好了');return;}
+  const items=S.plan&&S.plan.days[curTab];
+  if(b.dataset.swap){
+    const it=items.find(i=>i.uid===b.dataset.swap);if(!it) return;
+    const c=cands(it.cat,it.meal).filter(f=>f.id!==it.id&&!items.some(i=>i.id===f.id&&i.cat!=='staple'));
+    if(!c.length){toast('按你的设置，这一类没有别的可换了');return;}
+    const f=c[Math.floor(Math.random()*c.length)];
+    it.id=f.id;it.uid=rid();fill(items);save();renderPlan();renderShop();return;
+  }
+});
+function onGo(){
+  const f=$('#setup').elements,st={};
+  const chk=[['age',14,90,'年龄'],['height',120,220,'身高'],['weight',25,200,'体重'],['budget',300,10000,'预算']];
+  for(const [k,lo,hi,n] of chk){const v=parseFloat(f[k].value);if(!(v>=lo&&v<=hi)){toast(`${n}填得不太对（${lo}–${hi}）`);f[k].focus();return;}}
+  ['sex','age','height','weight','activity','budget','effort','custom'].forEach(k=>st[k]=f[k].value);
+  st.allergens=[...document.querySelectorAll('#alChips .chip.on')].map(x=>x.dataset.al);
+  st.dislikes=[...document.querySelectorAll('#dlChips .chip.on')].map(x=>x.dataset.dl);
+  S.settings=st;S.targets=calcTargets(st);
+  S.plan=genWeek();curTab=todayIdx();save();renderAll();
+  try{$('#targetsCard').scrollIntoView({behavior:'smooth'});}catch(e){}
+  toast('排好了');
+}
+$('#goBtn').addEventListener('click',onGo);
+$('#setup').addEventListener('submit',e=>{e.preventDefault();onGo();});
+$('#copyShop').addEventListener('click',()=>{
+  const data=shopData();let txt='一周购物清单\n';
+  for(const cat of Object.keys(CAT_N)){if(!data[cat])continue;txt+=`\n【${CAT_N[cat]}】\n`;data[cat].forEach(({f,m})=>txt+=`- ${f.name} ${qty(f,m)}\n`);}
+  (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast('已复制')).catch(()=>toast('复制失败，可以手动长按选择'));
+});
+$('#resetAll').addEventListener('click',()=>{
+  let ok=true;try{ok=confirm('确定清空设置和餐单吗？');}catch(e){}
+  if(!ok) return;
+  try{localStorage.removeItem(KEY);}catch(e){}
+  location.reload();
+});
+
+/* 旧版数据兼容：餐单里有已删除的食物就按当前设置重排 */
+(function migrate(){
+  try{
+    if(S.settings){
+      if(!(+S.settings.budget>=300)) S.settings.budget=DEFAULT.budget;
+      S.settings.allergens=(S.settings.allergens||[]).filter(k=>ALLERGENS.some(x=>x[0]===k));
+      S.settings.dislikes=(S.settings.dislikes||[]).filter(k=>DISLIKES.includes(k));
+      S.targets=calcTargets(S.settings);
+    }
+    const bad=S.plan&&(!Array.isArray(S.plan.days)||S.plan.days.length!==7||S.plan.days.some(d=>!Array.isArray(d)||d.some(i=>!FMAP[i.id])));
+    if(bad){S.plan=S.settings?genWeek():null;}
+    save();
+  }catch(e){S.plan=null;}
+})();
+try{$('#hdrBurst').insertAdjacentHTML('afterbegin',burstSVG());}catch(e){}
+renderAll();
+</script>
+</body>
+</html>
